@@ -16,12 +16,10 @@
     <!-- Log to a file as well, including size and time based rolling -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/d4j.%d{yyyy-MM-dd}.%i.log
+            <fileNamePattern>logs/floppa.%d{yyyy-MM-dd}.%i.log
             </fileNamePattern>
             <maxFileSize>100MB
             </maxFileSize>
-            <maxHistory>90
-            </maxHistory>
         </rollingPolicy>
         <encoder>
             <charset>UTF-8
