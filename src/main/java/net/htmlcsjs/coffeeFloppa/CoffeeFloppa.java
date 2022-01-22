@@ -79,12 +79,16 @@ public class CoffeeFloppa {
             String call = (String) commandMap.get("call");
             MessageHandler.addCommand(new CustomCommand(call, responses));
         }
+
+        // Add search commands
+        MessageHandler.addSearchCommand(new SearchCurseCommand());
     }
 
     public static void refreshConfig() {
         try {
             jsonData = (JSONObject) new JSONParser().parse(new FileReader("config.json"));
             MessageHandler.clearCommands();
+            MessageHandler.clearSearchCommands();
             refreshCommands();
         } catch (Exception e) {
             e.printStackTrace();
