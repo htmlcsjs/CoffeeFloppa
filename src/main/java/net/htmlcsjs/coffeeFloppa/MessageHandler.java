@@ -20,7 +20,7 @@ public class MessageHandler {
         String msgContent = message.getContent();
 
         // If the first char is the prefix
-        if (msgContent.charAt(0) == CoffeeFloppa.prefix) {
+        if (msgContent.charAt(0) == CoffeeFloppa.prefix && !message.getAuthor().get().isBot()) {
 
             // get the command
             String commandCall = msgContent.toLowerCase().split(" ")[0].replace(String.valueOf(CoffeeFloppa.prefix), " ").strip();
@@ -34,7 +34,7 @@ public class MessageHandler {
         for (String key : searchCommands.keySet()) {
             String prefix = key.split(" ")[0];
             String terminator = key.split(" ")[1];
-            if (msgContent.contains(prefix) && msgContent.contains(terminator) && msgContent.indexOf(prefix) < msgContent.indexOf(terminator)) {
+            if (msgContent.contains(prefix) && msgContent.contains(terminator) && msgContent.indexOf(prefix) < msgContent.indexOf(terminator) && !message.getAuthor().get().isBot()) {
                 ICommand command = searchCommands.get(key);
                 return message.getChannel().flatMap(channel -> channel.createMessage(command.execute(message)));
             }
