@@ -1,4 +1,4 @@
-package net.htmlcsjs.coffeeFloppa.commands.helpers;
+package net.htmlcsjs.coffeeFloppa.helpers;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;

@@ -73,6 +73,7 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new FlopCountCommand());
         MessageHandler.addCommand(new SearchMatCommand());
         MessageHandler.addCommand(new SearchMatByIdCommand());
+        MessageHandler.addCommand(new QuestbookCommand("gcp"));
 
         // Add commands from JSON
         for (Object obj : (JSONArray) jsonData.get("commands")) {

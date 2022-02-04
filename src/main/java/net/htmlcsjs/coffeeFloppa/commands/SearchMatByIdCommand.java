@@ -1,7 +1,7 @@
 package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.core.object.entity.Message;
-import net.htmlcsjs.coffeeFloppa.commands.helpers.MaterialCommandsHelper;
+import net.htmlcsjs.coffeeFloppa.helpers.MaterialCommandsHelper;
 import org.json.simple.JSONArray;
 
 import java.util.Map;
