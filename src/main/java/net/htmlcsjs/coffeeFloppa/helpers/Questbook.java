@@ -17,6 +17,7 @@ public class Questbook {
             jsonData = (JSONObject) new JSONParser().parse(new FileReader("qb/" + name + ".json"));
         } catch (Exception e) {
             e.printStackTrace();
+            return;
         }
         Map<String,Map<String, Object>> questArray = (Map<String, Map<String, Object>>) jsonData.get("questDatabase:9");
         for (Map<String, Object> questData : questArray.values()) {
