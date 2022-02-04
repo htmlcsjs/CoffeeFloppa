@@ -6,23 +6,22 @@ import org.json.simple.JSONArray;
 
 import java.util.Map;
 
-public class SearchMatCommand implements ICommand {
-
+public class SearchMatByIdCommand implements ICommand {
     @Override
     public String getName() {
-        return "material";
+        return "materialID";
     }
 
     @Override
     public String execute(Message message) {
-        String materialName = message.getContent().split(" ")[1].toLowerCase();
+        int materialID = Integer.parseInt(message.getContent().split(" ")[1]);
         JSONArray materialList = (JSONArray) MaterialCommandsHelper.getMaterialData().get("materials");
         for (Object obj: materialList) {
             Map<String, Object> materialMap = (Map<String, Object>) obj;
-            if (((String) materialMap.get("unlocalized_name")).split("\\.")[1].equalsIgnoreCase(materialName)) {
+            if ((long) materialMap.get("id") == (materialID)) {
                 return MaterialCommandsHelper.parseMaterial(materialMap);
             }
         }
-        return String.format("Sorry, the material %s was not found.", materialName);
+        return String.format("Sorry, the material with the id %d was not found.", materialID);
     }
 }
