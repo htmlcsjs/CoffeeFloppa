@@ -27,36 +27,45 @@ public class QuestbookCommand implements ICommand {
         String[] splitArg = message.getContent().split(" ");
         String arg = String.join(" ", Arrays.copyOfRange(splitArg, 2, splitArg.length));
         int questCount = 0;
-        if (verb.equalsIgnoreCase("id")) {
-            QuestDefinition quest = qb.questMap.get(Long.parseLong(arg));
+        try {
+            QuestDefinition quest = qb.questMap.get(Long.parseLong(verb));
             if (quest != null) {
                 return quest.generateMessage();
             } else {
                 return "Sorry, that quest could not be found";
             }
-        } else if (verb.equalsIgnoreCase("search")) {
-            StringBuilder msgBuilder = new StringBuilder();
-            for (String questname: qb.nameMap.keySet()) {
-                for (String str: arg.split(" ")) {
-                    if (questname.toLowerCase().contains(str.toLowerCase())) {
-                        msgBuilder.append(qb.nameMap.get(questname))
-                                .append(": ")
-                                .append(questname)
-                                .append("\n");
-                        questCount++;
-                        break;
+        } catch (NumberFormatException e) {
+            if (verb.equalsIgnoreCase("id")) {
+                QuestDefinition quest = qb.questMap.get(Long.parseLong(arg));
+                if (quest != null) {
+                    return quest.generateMessage();
+                } else {
+                    return "Sorry, that quest could not be found";
+                }
+            } else if (verb.equalsIgnoreCase("search")) {
+                StringBuilder msgBuilder = new StringBuilder();
+                for (String questname : qb.nameMap.keySet()) {
+                    for (String str : arg.split(" ")) {
+                        if (questname.toLowerCase().contains(str.toLowerCase())) {
+                            msgBuilder.append(qb.nameMap.get(questname))
+                                    .append(": ")
+                                    .append(questname)
+                                    .append("\n");
+                            questCount++;
+                            break;
+                        }
                     }
                 }
+                if (msgBuilder.isEmpty()) {
+                    msgBuilder.append("Sorry, we couldnt find any quests matching ")
+                            .append(arg)
+                            .append(" in the database for ")
+                            .append(qbName);
+                }
+                FloppaLogger.logger.info(msgBuilder.toString());
+                msgBuilder.insert(0, "Found " + questCount + " quests matching `" + arg + "`:```\n");
+                return msgBuilder.append("```").toString();
             }
-            if (msgBuilder.isEmpty()) {
-                msgBuilder.append("Sorry, we couldnt find any quests matching ")
-                        .append(arg)
-                        .append(" in the database for ")
-                        .append(qbName);
-            }
-            FloppaLogger.logger.info(msgBuilder.toString());
-            msgBuilder.insert(0, "Found " + questCount + " quests matching `" + arg + "`:```\n");
-            return msgBuilder.append("```").toString();
         }
         return "Sorry, that was an invalid input";
     }
