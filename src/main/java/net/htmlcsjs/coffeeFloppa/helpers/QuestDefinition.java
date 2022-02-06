@@ -50,7 +50,7 @@ public class QuestDefinition {
         description = descBuilder.toString();
     }
 
-    public String generateMessage() {
+    public String generateMessage(Questbook qb) {
         StringBuilder msgBuilder = new StringBuilder();
         msgBuilder.append("__").append(name).append("__\n");
         msgBuilder.append("*ID:").append(id).append("*\n");
@@ -58,7 +58,7 @@ public class QuestDefinition {
             msgBuilder.append("*Prerequisites: ");
             List<String> stringPreRequisites = new ArrayList<>();
             for (Long id: preRequisites) {
-                stringPreRequisites.add(id.toString());
+                stringPreRequisites.add(qb.questMap.get(id).getName() + " (" + id + ")");
             }
             msgBuilder.append(String.join(", ", stringPreRequisites));
             msgBuilder.append("*\n\n");

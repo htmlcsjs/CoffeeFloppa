@@ -30,7 +30,7 @@ public class QuestbookCommand implements ICommand {
         try {
             QuestDefinition quest = qb.questMap.get(Long.parseLong(verb));
             if (quest != null) {
-                return quest.generateMessage();
+                return quest.generateMessage(qb);
             } else {
                 return "Sorry, that quest could not be found";
             }
@@ -38,7 +38,7 @@ public class QuestbookCommand implements ICommand {
             if (verb.equalsIgnoreCase("id")) {
                 QuestDefinition quest = qb.questMap.get(Long.parseLong(arg));
                 if (quest != null) {
-                    return quest.generateMessage();
+                    return quest.generateMessage(qb);
                 } else {
                     return "Sorry, that quest could not be found";
                 }
