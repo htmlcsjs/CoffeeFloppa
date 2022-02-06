@@ -25,8 +25,8 @@ public class MaterialCommandsHelper {
                     .append("\n");
         }
         List<Map<String, Object>> componentsList = (List<Map<String, Object>>) materialMap.get("components");
-        returnMsg.append("Formula: ").append(materialMap.get("formula")).append("\n");
         if (!componentsList.isEmpty()) {
+            returnMsg.append("Formula: ").append(materialMap.get("formula")).append("\n");
             returnMsg.append("Composed of: \n");
             for (Map<String, Object> component: componentsList) {
                 returnMsg.append(" - ")
