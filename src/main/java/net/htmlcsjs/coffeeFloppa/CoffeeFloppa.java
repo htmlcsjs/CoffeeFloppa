@@ -75,6 +75,10 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new SearchMatByIdCommand());
         MessageHandler.addCommand(new QuestbookCommand("gcp"));
 
+        if ((Boolean) jsonData.get("evalEnabled")) {
+            MessageHandler.addCommand(new EvalCommand());
+        }
+
         // Add commands from JSON
         for (Object obj : (JSONArray) jsonData.get("commands")) {
             Map<?, ?> commandMap = (Map<?, ?>) obj;
