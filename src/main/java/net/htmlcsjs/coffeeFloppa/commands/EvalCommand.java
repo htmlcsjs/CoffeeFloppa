@@ -22,31 +22,36 @@ public class EvalCommand implements ICommand{
             try {
                 FileWriter pyWriter = new FileWriter("tmp.py");
                 StringBuilder codeBuilder = new StringBuilder();
-                codeBuilder.append("import math, numpy");
+                codeBuilder.append("import math\nimport numpy as np\n");
                 for (String str: arg.split("\\n")) {
                     if (!str.toLowerCase().contains("import")) {
                         codeBuilder.append(str);
                     }
                 }
-                pyWriter.write(arg);
+                pyWriter.write(codeBuilder.toString());
                 pyWriter.close();
 
                 ProcessBuilder processBuilder = new ProcessBuilder();
                 processBuilder.command("python", "tmp.py");
                 Process process = processBuilder.start();
                 StringBuilder output = new StringBuilder();
+                StringBuilder errorOut = new StringBuilder();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 
                 String line;
                 while ((line = reader.readLine()) != null) {
                     output.append(line).append("\n");
+                }
+                while ((line = errorReader.readLine()) != null) {
+                    errorOut.append(line).append("\n");
                 }
 
                 int exitVal = process.waitFor();
                 if (exitVal == 0) {
                     return output.toString();
                 } else {
-                    return "The command errored \n" + output;
+                    return "The command errored \n" + errorOut;
                 }
             } catch (Exception e) {
                 e.printStackTrace();

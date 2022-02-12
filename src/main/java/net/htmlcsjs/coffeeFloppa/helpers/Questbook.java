@@ -14,14 +14,15 @@ public class Questbook {
     public Questbook(String name) {
         JSONObject jsonData = null;
         try {
-            jsonData = (JSONObject) new JSONParser().parse(new FileReader("qb/" + name + ".json"));
+            FileReader jsonReader = new FileReader("qb/" + name + ".json");
+            jsonData = (JSONObject) new JSONParser().parse(jsonReader);
         } catch (Exception e) {
             e.printStackTrace();
             return;
         }
-        Map<String,Map<String, Object>> questArray = (Map<String, Map<String, Object>>) jsonData.get("questDatabase:9");
-        for (Map<String, Object> questData : questArray.values()) {
-            QuestDefinition currentDef = new QuestDefinition(questData);
+        JSONObject questArray = (JSONObject) jsonData.get("questDatabase:9");
+        for (Object obj : questArray.values()) {
+            QuestDefinition currentDef = new QuestDefinition((JSONObject) obj);
             nameMap.put(currentDef.getName(), currentDef.getId());
             questMap.put(currentDef.getId(), currentDef);
         }

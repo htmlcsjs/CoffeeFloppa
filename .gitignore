@@ -20,5 +20,4 @@ build
 # other
 run
 classes
-logs/debug.log
-logs/latest.log
+logs/

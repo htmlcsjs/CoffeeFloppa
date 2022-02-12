@@ -1,5 +1,7 @@
 package net.htmlcsjs.coffeeFloppa.helpers;
 
+import org.json.simple.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +13,7 @@ public class QuestDefinition {
     private final String name;
     private final long id;
 
-    public QuestDefinition(Map<String, Object> questData) {
+    public QuestDefinition(JSONObject questData) {
         preRequisites = (List<Long>) questData.get("preRequisites:11");
         id = (long) questData.get("questID:3");
         Map<String, Object> deeperQuestData = (Map<String, Object>) ((Map<String, Object>) questData.get("properties:10")).get("betterquesting:10");
