@@ -3,11 +3,13 @@ package net.htmlcsjs.coffeeFloppa;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.core.spec.MessageCreateFields;
 import discord4j.discordjson.json.EmojiData;
 import net.htmlcsjs.coffeeFloppa.commands.ICommand;
 import reactor.core.publisher.Mono;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,9 +36,8 @@ public class MessageHandler {
                     if (commandMessage.length() < 3000) {
                         return message.getChannel().flatMap(channel -> channel.createMessage(command.execute(message)));
                     } else {
-                        EmbedCreateSpec.Builder embedBuilder = EmbedCreateSpec.builder();
-                        embedBuilder.description(commandMessage);
-                        return message.getChannel().flatMap(channel -> channel.createMessage(embedBuilder.build()));
+                        return message.getChannel().flatMap(channel -> channel.createMessage("Message content too large for msg, falling to an attachment")
+                                .withFiles(MessageCreateFields.File.of("msg.txt", new ByteArrayInputStream(commandMessage.getBytes(StandardCharsets.UTF_8)))));
                     }
                 }
             }

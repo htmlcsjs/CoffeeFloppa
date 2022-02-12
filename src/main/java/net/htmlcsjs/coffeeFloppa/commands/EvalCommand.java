@@ -25,7 +25,7 @@ public class EvalCommand implements ICommand{
             try {
                 FileWriter pyWriter = new FileWriter("tmp.py");
                 StringBuilder codeBuilder = new StringBuilder();
-                codeBuilder.append("import math\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport copy\n");
+                codeBuilder.append("import math\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport copy\nimport random\n");
                 if (message.getAttachments().size() > 0) {
                     URL url = new URL(message.getAttachments().get(0).getUrl());
                     ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
