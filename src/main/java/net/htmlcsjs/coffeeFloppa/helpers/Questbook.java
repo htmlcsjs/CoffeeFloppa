@@ -21,10 +21,12 @@ public class Questbook {
             return;
         }
         JSONObject questArray = (JSONObject) jsonData.get("questDatabase:9");
-        for (Object obj : questArray.values()) {
-            QuestDefinition currentDef = new QuestDefinition((JSONObject) obj);
-            nameMap.put(currentDef.getName(), currentDef.getId());
-            questMap.put(currentDef.getId(), currentDef);
+        if (questArray != null) {
+            for (Object obj : questArray.values()) {
+                QuestDefinition currentDef = new QuestDefinition((JSONObject) obj);
+                nameMap.put(currentDef.getName(), currentDef.getId());
+                questMap.put(currentDef.getId(), currentDef);
+            }
         }
     }
 

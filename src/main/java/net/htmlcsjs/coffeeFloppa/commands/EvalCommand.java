@@ -22,7 +22,7 @@ public class EvalCommand implements ICommand{
             try {
                 FileWriter pyWriter = new FileWriter("tmp.py");
                 StringBuilder codeBuilder = new StringBuilder();
-                codeBuilder.append("import math\nimport numpy as np\n");
+                codeBuilder.append("import math\nimport numpy as np\nimport pandas as pd\n");
                 for (String str: arg.split("\\n")) {
                     if (!str.toLowerCase().contains("import")) {
                         codeBuilder.append(str);
