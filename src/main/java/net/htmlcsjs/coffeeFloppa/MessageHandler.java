@@ -3,6 +3,7 @@ package net.htmlcsjs.coffeeFloppa;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.EmojiData;
 import net.htmlcsjs.coffeeFloppa.commands.ICommand;
 import reactor.core.publisher.Mono;
@@ -29,7 +30,14 @@ public class MessageHandler {
 
                 // we do a little bit of executing
                 if (command != null) {
-                    return message.getChannel().flatMap(channel -> channel.createMessage(command.execute(message)));
+                    String commandMessage = command.execute(message);
+                    if (commandMessage.length() < 3000) {
+                        return message.getChannel().flatMap(channel -> channel.createMessage(command.execute(message)));
+                    } else {
+                        EmbedCreateSpec.Builder embedBuilder = EmbedCreateSpec.builder();
+                        embedBuilder.description(commandMessage);
+                        return message.getChannel().flatMap(channel -> channel.createMessage(embedBuilder.build()));
+                    }
                 }
             }
         } catch (IndexOutOfBoundsException ignored) {}
