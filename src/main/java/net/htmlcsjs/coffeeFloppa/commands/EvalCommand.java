@@ -56,9 +56,9 @@ public class EvalCommand implements ICommand{
                 processBuilder.command("python", "tmp.py");
                 Process process = processBuilder.start();
                 StringBuilder output = new StringBuilder();
-                output.append("```");
+                output.append("```py\n");
                 StringBuilder errorOut = new StringBuilder();
-                errorOut.append("```");
+                errorOut.append("```py\n");
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 
