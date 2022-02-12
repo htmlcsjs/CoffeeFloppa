@@ -20,17 +20,19 @@ public class MessageHandler {
         String msgContent = message.getContent();
 
         // If the first char is the prefix
-        if (msgContent.charAt(0) == CoffeeFloppa.prefix && !message.getAuthor().get().isBot()) {
+        try {
+            if (msgContent.charAt(0) == CoffeeFloppa.prefix && !message.getAuthor().get().isBot()) {
 
-            // get the command
-            String commandCall = msgContent.toLowerCase().split(" ")[0].replace(String.valueOf(CoffeeFloppa.prefix), " ").strip();
-            ICommand command = commands.get(commandCall);
+                // get the command
+                String commandCall = msgContent.toLowerCase().split(" ")[0].replace(String.valueOf(CoffeeFloppa.prefix), " ").strip();
+                ICommand command = commands.get(commandCall);
 
-            // we do a little bit of executing
-            if (command != null) {
-                return message.getChannel().flatMap(channel -> channel.createMessage(command.execute(message)));
+                // we do a little bit of executing
+                if (command != null) {
+                    return message.getChannel().flatMap(channel -> channel.createMessage(command.execute(message)));
+                }
             }
-        }
+        } catch (IndexOutOfBoundsException ignored) {}
         for (String key : searchCommands.keySet()) {
             String prefix = key.split(" ")[0];
             String terminator = key.split(" ")[1];
