@@ -1,9 +1,9 @@
 {
     "token": "<insert bot token here>",
-    "admin": "<insert adimin user id here>",
+    "admin": "<insert admin user id here>",
     "prefix": "$",
     "commands": [],
     "guilds": {
-        "<guild-id>": "<role-id>",
+        "<guild-id>": "<role-id>"
     }
 }
