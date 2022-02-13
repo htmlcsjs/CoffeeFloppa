@@ -11,7 +11,12 @@ public class GithubIssueCommand implements ICommand {
 
     @Override
     public String execute(Message message) {
-        String repo = message.getContent().split(" ")[1].toLowerCase();
+        String repo;
+        try {
+            repo = message.getContent().split(" ")[1].toLowerCase();
+        } catch (Exception ignored) {
+            return "No Github Repo supplied";
+        }
         if (repo.equalsIgnoreCase("ceu"))
             return "<https://github.com/GregTechCEu/GregTech/issues/new/choose>";
         if (repo.equalsIgnoreCase("gcy"))

@@ -21,6 +21,14 @@ public class MessageHandler {
 
     public static Mono<Object> normal(Message message) {
         String msgContent = message.getContent();
+        // flop
+        if (String.join("", msgContent.toLowerCase().split(" ")).contains("flop")) {
+            EmojiData emojiData = CoffeeFloppa.client.getGuildEmojiById(Snowflake.of("664888369087512601"), Snowflake.of("853358698964713523")).getData().block();
+            if (emojiData != null) {
+                message.addReaction(ReactionEmoji.of(emojiData)).subscribe();
+                CoffeeFloppa.increaseFlopCount();
+            }
+        }
 
         // If the first char is the prefix
         try {
@@ -34,10 +42,12 @@ public class MessageHandler {
                 if (command != null) {
                     String commandMessage = command.execute(message);
                     if (commandMessage.length() < 3000) {
-                        return message.getChannel().flatMap(channel -> channel.createMessage(command.execute(message)));
+                        return message.getChannel().flatMap(channel -> channel.createMessage(command.execute(message))
+                                .withMessageReference(message.getId()));
                     } else {
                         return message.getChannel().flatMap(channel -> channel.createMessage("Message content too large for msg, falling to an attachment")
-                                .withFiles(MessageCreateFields.File.of("msg.txt", new ByteArrayInputStream(commandMessage.getBytes(StandardCharsets.UTF_8)))));
+                                .withFiles(MessageCreateFields.File.of("msg.txt", new ByteArrayInputStream(commandMessage.getBytes(StandardCharsets.UTF_8))))
+                                .withMessageReference(message.getId()));
                     }
                 }
             }
@@ -48,14 +58,6 @@ public class MessageHandler {
             if (msgContent.contains(prefix) && msgContent.contains(terminator) && msgContent.indexOf(prefix) < msgContent.indexOf(terminator) && !message.getAuthor().get().isBot()) {
                 ICommand command = searchCommands.get(key);
                 return message.getChannel().flatMap(channel -> channel.createMessage(command.execute(message)));
-            }
-        }
-        // flop
-        if (String.join("", msgContent.toLowerCase().split(" ")).contains("flop")) {
-            EmojiData emojiData = CoffeeFloppa.client.getGuildEmojiById(Snowflake.of("664888369087512601"), Snowflake.of("853358698964713523")).getData().block();
-            if (emojiData != null) {
-                message.addReaction(ReactionEmoji.of(emojiData)).subscribe();
-                CoffeeFloppa.increaseFlopCount();
             }
         }
         return Mono.empty();
