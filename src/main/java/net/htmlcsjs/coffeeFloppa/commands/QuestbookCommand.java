@@ -18,7 +18,7 @@ public class QuestbookCommand implements ICommand {
 
     @Override
     public String getName() {
-        return "questbook_" + qbName;
+        return qbName + "_quests";
     }
 
     @Override

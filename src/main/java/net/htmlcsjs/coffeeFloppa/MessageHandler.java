@@ -2,6 +2,7 @@ package net.htmlcsjs.coffeeFloppa;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.MessageCreateFields;
 import discord4j.discordjson.json.EmojiData;
@@ -33,6 +34,7 @@ public class MessageHandler {
         // If the first char is the prefix
         try {
             if (msgContent.charAt(0) == CoffeeFloppa.prefix && !message.getAuthor().get().isBot()) {
+                message.getChannel().flatMap(MessageChannel::type).subscribe(); // set flop to writing
 
                 // get the command
                 String commandCall = msgContent.toLowerCase().split(" ")[0].replace(String.valueOf(CoffeeFloppa.prefix), " ").strip();
