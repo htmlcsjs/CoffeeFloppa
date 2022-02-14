@@ -1,14 +1,19 @@
 package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.core.spec.MessageCreateFields;
 
 import java.io.*;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class EvalCommand implements ICommand{
     @Override
@@ -23,6 +28,7 @@ public class EvalCommand implements ICommand{
         String arg = String.join(" ", Arrays.copyOfRange(splitArg, 2, splitArg.length));
         if (verb.equalsIgnoreCase("run")) {
             try {
+                message.getChannel().flatMap(MessageChannel::type).subscribe();
                 FileWriter pyWriter = new FileWriter("tmp.py");
                 StringBuilder codeBuilder = new StringBuilder();
                 codeBuilder.append("import math\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport copy\nimport random\n");
@@ -53,7 +59,10 @@ public class EvalCommand implements ICommand{
                 pyWriter.close();
 
                 ProcessBuilder processBuilder = new ProcessBuilder();
-                processBuilder.command("python", "tmp.py");
+                processBuilder.command("python", "../tmp.py");
+                File pwd = new File("evalRun/");
+                pwd.mkdirs();
+                processBuilder.directory(pwd);
                 Process process = processBuilder.start();
                 StringBuilder output = new StringBuilder();
                 output.append("```py\n");
@@ -69,12 +78,49 @@ public class EvalCommand implements ICommand{
                 while ((line = errorReader.readLine()) != null) {
                     errorOut.append(line).append("\n");
                 }
-                errorOut.append("```");
-                output.append("```");
+                errorOut.append("\n```");
+                output.append("\n```");
 
                 int exitVal = process.waitFor();
                 if (exitVal == 0) {
-                    return output.toString();
+                    List<MessageCreateFields.File> attachedFiles = new ArrayList<>();
+                    for (String str: output.toString().split("\n")) {
+                        if (!(str.equals("")) && str.charAt(0) == '$') {
+                            String action = str.toLowerCase().split(" ")[0].replace("$", " ").strip();
+                            if (action.equals("attach")) {
+                                try {
+                                    String[] fileNameSplit = str.split(" ");
+                                    String fileName = String.join(" ", Arrays.copyOfRange(fileNameSplit, 1, fileNameSplit.length));
+                                    if (!fileName.contains("..") && !(fileName.charAt(0) == '/')) {
+                                        InputStream fileReader = new FileInputStream("evalRun/" + fileName);
+                                        attachedFiles.add(MessageCreateFields.File.of(fileName, fileReader));
+                                    }
+                                } catch (FileNotFoundException e) {
+                                    message.getChannel().flatMap(channel -> channel.createMessage("Couldnt fine file with the name referanced\n```java\n" + e.getMessage() + "```"));
+                                }
+                            }
+                        }
+                    }
+
+                    // Output handling
+                    if (!attachedFiles.isEmpty()) {
+                        if (output.toString().length() < 2000) {
+                            message.getChannel().flatMap(channel -> channel.createMessage(output.toString())
+                                    .withMessageReference(message.getId())
+                                    .withFiles(attachedFiles)).subscribe();
+                        } else {
+                            message.getChannel().flatMap(channel -> {
+                                ByteArrayInputStream outputStream = new ByteArrayInputStream(output.toString().getBytes(StandardCharsets.UTF_8));
+                                attachedFiles.add(MessageCreateFields.File.of("msg.txt", outputStream));
+                                return channel.createMessage("Message content too large for msg, falling to an attachment")
+                                        .withFiles(attachedFiles)
+                                        .withMessageReference(message.getId());
+                            }).subscribe();
+                        }
+                        return null;
+                    } else {
+                        return output.toString();
+                    }
                 } else {
                     return "The command errored \n" + errorOut;
                 }
@@ -83,7 +129,6 @@ public class EvalCommand implements ICommand{
                 return "an error occurred";
             }
         }
-
         return "Invalid input";
     }
 }

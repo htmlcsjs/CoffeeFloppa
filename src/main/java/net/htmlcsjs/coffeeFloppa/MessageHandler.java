@@ -41,10 +41,10 @@ public class MessageHandler {
                 // we do a little bit of executing
                 if (command != null) {
                     String commandMessage = command.execute(message);
-                    if (commandMessage.length() < 3000) {
-                        return message.getChannel().flatMap(channel -> channel.createMessage(command.execute(message))
+                    if (commandMessage != null && commandMessage.length() < 2000) {
+                        return message.getChannel().flatMap(channel -> channel.createMessage(commandMessage)
                                 .withMessageReference(message.getId()));
-                    } else {
+                    } else if (commandMessage != null){
                         return message.getChannel().flatMap(channel -> channel.createMessage("Message content too large for msg, falling to an attachment")
                                 .withFiles(MessageCreateFields.File.of("msg.txt", new ByteArrayInputStream(commandMessage.getBytes(StandardCharsets.UTF_8))))
                                 .withMessageReference(message.getId()));
