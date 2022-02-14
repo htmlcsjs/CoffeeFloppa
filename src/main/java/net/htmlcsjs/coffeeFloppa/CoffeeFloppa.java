@@ -75,6 +75,7 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new SearchMatByIdCommand());
         MessageHandler.addCommand(new QuestbookCommand("gcp"));
         MessageHandler.addCommand(new GithubIssueCommand());
+        MessageHandler.addCommand(new AddonCommand());
 
         try {
             if ((boolean) jsonData.get("evalEnabled")) {

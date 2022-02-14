@@ -17,6 +17,7 @@ public class GithubIssueCommand implements ICommand {
         } catch (Exception ignored) {
             return "No Github Repo supplied";
         }
+
         if (repo.equalsIgnoreCase("ceu"))
             return "<https://github.com/GregTechCEu/GregTech/issues/new/choose>";
         if (repo.equalsIgnoreCase("gcy"))
@@ -25,6 +26,8 @@ public class GithubIssueCommand implements ICommand {
             return "<https://github.com/GregTechCEu/gregicality-multiblocks/issues/new>";
         if (repo.equalsIgnoreCase("gcys"))
             return "<https://github.com/GregTechCEu/gregicality-science/issues/new>";
+        if (repo.equalsIgnoreCase("floppa"))
+            return "<https://github.com/htmlcsjs/CoffeeFloppa/issues/new>";
 
         return String.format("GitHub repository %s not found", repo);
     }
