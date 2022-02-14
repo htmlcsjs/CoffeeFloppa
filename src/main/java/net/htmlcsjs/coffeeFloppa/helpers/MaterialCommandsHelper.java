@@ -17,6 +17,7 @@ public class MaterialCommandsHelper {
         returnMsg.append(String.format("Colour: #%x\n", (long) materialMap.get("colour")));
         returnMsg.append(String.format("ID: %d\n", (long) materialMap.get("id")));
         returnMsg.append(String.format("Mass: %d\n", (long) materialMap.get("mass")));
+        returnMsg.append(String.format("Icon Set: %s\n", materialMap.get("icon_set")));
         Map<String, Object> propertiesMap = (Map<String, Object>) materialMap.get("properties");
         for (String propertyName: propertiesMap.keySet()) {
             returnMsg.append(propertyName.substring(0, 1).toUpperCase())
