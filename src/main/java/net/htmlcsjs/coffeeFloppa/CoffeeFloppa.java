@@ -16,6 +16,8 @@ import reactor.core.publisher.Mono;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -73,15 +75,18 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new FlopCountCommand());
         MessageHandler.addCommand(new SearchMatCommand());
         MessageHandler.addCommand(new SearchMatByIdCommand());
-        MessageHandler.addCommand(new QuestbookCommand("gcp"));
         MessageHandler.addCommand(new GithubIssueCommand());
         MessageHandler.addCommand(new AddonCommand());
+        MessageHandler.addCommand(new QuestAdminCommand());
 
         try {
             if ((boolean) jsonData.get("evalEnabled")) {
                 MessageHandler.addCommand(new EvalCommand());
             }
         } catch (Exception ignored) {}
+        for (String name: (List<String>) jsonData.getOrDefault("quest_books", Collections.EMPTY_LIST)) {
+            MessageHandler.addCommand(new QuestbookCommand(name));
+        }
 
         // Add commands from JSON
         for (Object obj : (JSONArray) jsonData.get("commands")) {
