@@ -1,13 +1,14 @@
 package net.htmlcsjs.coffeeFloppa.commands;
 
-import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
-import net.htmlcsjs.coffeeFloppa.FloppaLogger;
+import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class RemoveCmdCommand implements ICommand {
     @Override
@@ -17,18 +18,7 @@ public class RemoveCmdCommand implements ICommand {
 
     @Override
     public String execute(Message message) {
-        boolean validRole = false;
-        Snowflake guildID = message.getGuild().block().getId();
-        Set<Snowflake> userRoleIDs = (message.getAuthor().get().asMember(guildID).block().getRoleIds());
-        for (String str : CoffeeFloppa.adminRolesByGuild.values()) {
-            if (userRoleIDs.contains(Snowflake.of(str))) {
-                validRole = true;
-            }
-        }
-        if (message.getAuthor().get().getId().equals(CoffeeFloppa.admin)) {
-            validRole = true;
-        }
-        if (validRole) {
+        if (CommandUtil.getAllowedToRun(message)) {
             String messageValue = message.getContent();
             String call = messageValue.split(" ")[1].toLowerCase();
 
@@ -56,7 +46,6 @@ public class RemoveCmdCommand implements ICommand {
                 return "command " + CoffeeFloppa.prefix + call + " wasn't found";
             }
         } else {
-            FloppaLogger.logger.warn(message.getAuthor().get().getTag() + " is being very naughty");
             return "Sorry, but you dont have the required permissions";
         }
     }
