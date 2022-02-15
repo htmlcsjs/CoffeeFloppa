@@ -27,6 +27,8 @@ public class QuestbookCommand implements ICommand {
         String[] splitArg = message.getContent().split(" ");
         String arg = String.join(" ", Arrays.copyOfRange(splitArg, 2, splitArg.length));
         int questCount = 0;
+        String lastQuestName = "";
+
         try {
             QuestDefinition quest = qb.questMap.get(Long.parseLong(verb));
             if (quest != null) {
@@ -52,9 +54,13 @@ public class QuestbookCommand implements ICommand {
                                     .append(questname)
                                     .append("\n");
                             questCount++;
+                            lastQuestName = questname;
                             break;
                         }
                     }
+                }
+                if (questCount == 1) {
+                    return qb.questMap.get(qb.nameMap.get(lastQuestName)).generateMessage(qb);
                 }
                 if (msgBuilder.isEmpty()) {
                     msgBuilder.append("Sorry, we couldnt find any quests matching ")
