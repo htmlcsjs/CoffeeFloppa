@@ -2,6 +2,7 @@ package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.core.object.entity.Message;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
+import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import org.json.simple.JSONObject;
 
@@ -10,7 +11,8 @@ import java.io.FileOutputStream;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class QuestAdminCommand implements ICommand{
@@ -21,78 +23,61 @@ public class QuestAdminCommand implements ICommand{
 
     @Override
     public String execute(Message message) {
-        String questBook = "", verb = "";
+        String questBook = "", verb = "", urlStr = "";
         boolean isAdmin = CommandUtil.getAllowedToRun(message);
         try {
             String[] msgSplit = message.getContent().split(" ");
-            questBook = String.join(" ", Arrays.copyOfRange(msgSplit, 2, msgSplit.length));
             verb = msgSplit[1];
+            questBook = msgSplit[2];
+            urlStr = msgSplit[3];
         } catch (Exception ignored) {}
 
         if (verb.equalsIgnoreCase("add")) {
             if (isAdmin) {
                 JSONObject jsonData = CoffeeFloppa.getJsonData();
-                List<String> qbList = (List<String>) jsonData.get("quest_books");
+                List<String> qbList = new ArrayList<>((List<String>) jsonData.getOrDefault("quest_books", Collections.emptyList()));
                 if (qbList.contains(questBook)) {
                     return "Use `update` instead of `add`";
                 }
                 if (questBook.equalsIgnoreCase("")) {
                     return "No Questbook name supplied";
                 }
+                String attachmentReturnStr = getAttachment(message, questBook, urlStr);
+                if (attachmentReturnStr != null)
+                    return attachmentReturnStr;
 
-                if (message.getAttachments().size() > 0) {
-                    try {
-                        URL url = new URL(message.getAttachments().get(0).getUrl());
-                        ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
-                        FileOutputStream fileOutputStream = new FileOutputStream("qb/" + questBook + ".json");
-                        fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-                        fileOutputStream.close();
-                    } catch (Exception e) {
-                        return "An error occurred:\n" + e.getClass().getName();
-                    }
-                    qbList.add(questBook);
-                    jsonData.put("quest_books", qbList);
-                    CoffeeFloppa.updateConfigFile(jsonData);
-                    return String.format("Added Questbook %s", questBook);
-                } else {
-                    return "No questbook file attached";
-                }
+                qbList.add(questBook);
+                jsonData.put("quest_books", qbList);
+                CoffeeFloppa.updateConfigFile(jsonData);
+                FloppaLogger.logger.info(String.format("Added Questbook %s", questBook));
+                return String.format("Added Questbook %s", questBook);
             } else {
                 return "You dont have the required permissions for this";
             }
         } else if (verb.equalsIgnoreCase("update")) {
             if (isAdmin) {
                 JSONObject jsonData = CoffeeFloppa.getJsonData();
-                List<String> qbList = (List<String>) jsonData.get("quest_books");
+                List<String> qbList = (List<String>) jsonData.getOrDefault("quest_books", Collections.emptyList());
                 if (!qbList.contains(questBook)) {
                     return "Use `add` instead of `update`";
                 }
                 if (questBook.equalsIgnoreCase("")) {
                     return "No Questbook name supplied";
                 }
+                String attachmentReturnStr = getAttachment(message, questBook, urlStr);
+                if (attachmentReturnStr != null)
+                    return attachmentReturnStr;
 
-                if (message.getAttachments().size() > 0) {
-                    try {
-                        URL url = new URL(message.getAttachments().get(0).getUrl());
-                        ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
-                        FileOutputStream fileOutputStream = new FileOutputStream("qb/" + questBook + ".json");
-                        fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-                        fileOutputStream.close();
-                    } catch (Exception e) {
-                        return "An error occurred:\n" + e.getClass().getName();
-                    }
-                    CoffeeFloppa.refreshConfig();
-                    return String.format("Updated Questbook %s", questBook);
-                } else {
-                    return "No questbook file attached";
-                }
+                CoffeeFloppa.refreshConfig();
+                FloppaLogger.logger.info(String.format("Updated Questbook %s", questBook));
+                return String.format("Updated Questbook %s", questBook);
             } else {
                 return "You dont have the required permissions for this";
             }
         } else if (verb.equalsIgnoreCase("delete")) {
             if (isAdmin) {
                 JSONObject jsonData = CoffeeFloppa.getJsonData();
-                List<String> qbList = (List<String>) jsonData.get("quest_books");
+                List<String> qbList = (List<String>) jsonData.getOrDefault("quest_books", Collections.emptyList());
                 if (!qbList.contains(questBook)) {
                     return "Questbook not found";
                 }
@@ -105,6 +90,7 @@ public class QuestAdminCommand implements ICommand{
                         qbList.remove(questBook);
                         jsonData.put("quest_books", qbList);
                         CoffeeFloppa.updateConfigFile(jsonData);
+                        FloppaLogger.logger.info(String.format("Deleted questbook %s", questBook));
                         return String.format("Deleted questbook %s", questBook);
                     } else {
                         return String.format("Couldn't delete questbook %s", questBook);
@@ -121,5 +107,42 @@ public class QuestAdminCommand implements ICommand{
                  - add: adds a new questbook
                  - update: updates a questbook
                  - delete: deletes a questbook""";
+    }
+
+    private String getAttachment(Message message, String questBook, String urlStr) {
+        if (message.getAttachments().size() > 0) {
+            try {
+                URL url = new URL(message.getAttachments().get(0).getUrl());
+                ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
+                File outFile = new File("qb/" + questBook + ".json");
+                outFile.createNewFile();
+                FileOutputStream fileOutputStream = new FileOutputStream("qb/" + questBook + ".json");
+                fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+                fileOutputStream.close();
+            } catch (Exception e) {
+                StringBuilder stackTrace = new StringBuilder();
+                for (StackTraceElement ste: e.getStackTrace()) {
+                    stackTrace.append(ste).append("\n");
+                }
+                return "An error occurred:```java\n" + stackTrace + "```";
+            }
+        } else {
+            try {
+                URL url = new URL(urlStr);
+                ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
+                File outFile = new File("qb/" + questBook + ".json");
+                outFile.createNewFile();
+                FileOutputStream fileOutputStream = new FileOutputStream("qb/" + questBook + ".json");
+                fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+                fileOutputStream.close();
+            } catch (Exception e) {
+                StringBuilder stackTrace = new StringBuilder();
+                for (StackTraceElement ste: e.getStackTrace()) {
+                    stackTrace.append(ste).append("\n");
+                }
+                return "An error occurred:```java\n" + stackTrace + "```";
+            }
+        }
+        return null;
     }
 }
