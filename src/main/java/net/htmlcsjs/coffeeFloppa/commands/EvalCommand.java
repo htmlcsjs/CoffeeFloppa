@@ -1,7 +1,6 @@
 package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.MessageCreateFields;
 
 import java.io.*;
@@ -11,9 +10,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class EvalCommand implements ICommand{
     @Override
@@ -30,7 +27,7 @@ public class EvalCommand implements ICommand{
             try {
                 FileWriter pyWriter = new FileWriter("tmp.py");
                 StringBuilder codeBuilder = new StringBuilder();
-                codeBuilder.append("import math\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport copy\nimport random\n");
+                codeBuilder.append("import math\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport copy\nimport random\neval = 'no'\nexec = 'no'\n");
                 if (message.getAttachments().size() > 0) {
                     URL url = new URL(message.getAttachments().get(0).getUrl());
                     ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
@@ -58,7 +55,7 @@ public class EvalCommand implements ICommand{
                 pyWriter.close();
 
                 ProcessBuilder processBuilder = new ProcessBuilder();
-                processBuilder.command("python", "../tmp.py");
+                processBuilder.command("timeout", "10", "python", "../tmp.py");
                 File pwd = new File("evalRun/");
                 pwd.mkdirs();
                 processBuilder.directory(pwd);
@@ -69,7 +66,6 @@ public class EvalCommand implements ICommand{
                 errorOut.append("```py\n");
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-
                 String line;
                 while ((line = reader.readLine()) != null) {
                     output.append(line).append("\n");
@@ -120,6 +116,8 @@ public class EvalCommand implements ICommand{
                     } else {
                         return output.toString();
                     }
+                } else if (exitVal == 124) {
+                    return "The command timeouted";
                 } else {
                     return "The command errored \n" + errorOut;
                 }
