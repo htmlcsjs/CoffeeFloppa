@@ -27,6 +27,7 @@ dependencies {
     implementation("com.discord4j:discord4j-core:$d4jVersion")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("com.googlecode.json-simple:json-simple:1.1.1")
+    implementation("me.xdrop:fuzzywuzzy:1.4.0")
 }
 
 tasks.withType<Jar> {
