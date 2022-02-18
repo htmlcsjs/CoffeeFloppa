@@ -33,7 +33,7 @@ public class MessageHandler {
 
         // If the first char is the prefix
         try {
-            if (msgContent.charAt(0) == CoffeeFloppa.prefix && !message.getAuthor().get().isBot()) {
+            if (msgContent.charAt(0) == CoffeeFloppa.prefix && !message.getAuthor().get().isBot() && !message.mentionsEveryone()) {
                 message.getChannel().flatMap(MessageChannel::type).subscribe(); // set flop to writing
 
                 // get the command
@@ -57,7 +57,7 @@ public class MessageHandler {
         for (String key : searchCommands.keySet()) {
             String prefix = key.split(" ")[0];
             String terminator = key.split(" ")[1];
-            if (msgContent.contains(prefix) && msgContent.contains(terminator) && msgContent.indexOf(prefix) < msgContent.indexOf(terminator) && !message.getAuthor().get().isBot()) {
+            if (msgContent.contains(prefix) && msgContent.contains(terminator) && msgContent.indexOf(prefix) < msgContent.indexOf(terminator) && !message.getAuthor().get().isBot() && !message.mentionsEveryone()) {
                 ICommand command = searchCommands.get(key);
                 return message.getChannel().flatMap(channel -> channel.createMessage(command.execute(message)));
             }
