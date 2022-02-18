@@ -2,7 +2,6 @@ package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.core.object.entity.Message;
 import me.xdrop.fuzzywuzzy.FuzzySearch;
-import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 import net.htmlcsjs.coffeeFloppa.helpers.QuestDefinition;
 import net.htmlcsjs.coffeeFloppa.helpers.Questbook;
 
@@ -41,7 +40,7 @@ public class QuestbookCommand implements ICommand {
         } catch (NumberFormatException e) {
             StringBuilder msgBuilder = new StringBuilder();
             for (String questname : qb.nameMap.keySet()) {
-                if (FuzzySearch.weightedRatio(questname, arg) > 75) {
+                if (FuzzySearch.partialRatio(arg,questname) > 75) {
                     Pattern pattern = Pattern.compile("§.");
                     Matcher matcher = pattern.matcher(questname);
                     msgBuilder.append(qb.nameMap.get(questname))
@@ -61,7 +60,6 @@ public class QuestbookCommand implements ICommand {
                         .append(" in the database for ")
                         .append(qbName);
             }
-            FloppaLogger.logger.info(msgBuilder.toString());
             msgBuilder.insert(0, "Found " + questCount + " quests matching `" + arg + "`:```\n");
             return msgBuilder.append("```").toString();
         }

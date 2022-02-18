@@ -11,6 +11,7 @@ public class QuestDefinition {
     private final List<Long> preRequisites;
     private final String description;
     private final String name;
+    private String formatterFinisher = "";
     private final long id;
 
     public QuestDefinition(JSONObject questData) {
@@ -21,7 +22,6 @@ public class QuestDefinition {
 
         String rawDesc = (String) deeperQuestData.get("desc:8");
         StringBuilder descBuilder = new StringBuilder();
-        String formatterFinisher = "";
         boolean nextIsFormatCode = false;
 
         for (char ch: rawDesc.toCharArray()) {
@@ -29,20 +29,18 @@ public class QuestDefinition {
                 nextIsFormatCode = true;
             } else if (nextIsFormatCode) {
                 if (ch == 'l') {
-                    descBuilder.append("**");
-                    formatterFinisher += "**";
+                    addFormatting("**", descBuilder);
                 } else if (ch == 'm') {
-                    descBuilder.append("~~");
-                    formatterFinisher += "~~";
+                    addFormatting("~~", descBuilder);
                 } else if (ch == 'n') {
-                    descBuilder.append("__");
-                    formatterFinisher += "__";
+                    addFormatting("__", descBuilder);
                 } else if (ch == 'o') {
-                    descBuilder.append("*");
-                    formatterFinisher += "*";
+                    addFormatting("*", descBuilder);
                 } else if (ch == 'r') {
                     descBuilder.append(formatterFinisher);
                     formatterFinisher = "";
+                } else if ("0123456789abcdef".contains(String.valueOf(ch))) {
+                    addFormatting("**", descBuilder);
                 }
                 nextIsFormatCode = false;
             } else {
@@ -75,6 +73,12 @@ public class QuestDefinition {
 
     public long getId() {
         return id;
+    }
+
+    private StringBuilder addFormatting(String formattingCode, StringBuilder builder) {
+        builder.append(formattingCode);
+        formatterFinisher += formattingCode;
+        return builder;
     }
 
 }
