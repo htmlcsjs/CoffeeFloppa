@@ -27,7 +27,7 @@ public class EvalCommand implements ICommand{
             try {
                 FileWriter pyWriter = new FileWriter("tmp.py");
                 StringBuilder codeBuilder = new StringBuilder();
-                codeBuilder.append("import math\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport copy\nimport random\neval = 'no'\nexec = 'no'\n");
+                codeBuilder.append("import math\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport copy\nimport random\ndel eval\ndel exec\n");
                 if (message.getAttachments().size() > 0) {
                     URL url = new URL(message.getAttachments().get(0).getUrl());
                     ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
@@ -39,14 +39,14 @@ public class EvalCommand implements ICommand{
 
                     for (String strRaw : data.split("\n")) {
                         String str = strRaw.replaceAll("`", "");
-                        if (!str.toLowerCase().contains("import")) {
+                        if (!str.toLowerCase().contains("import") && !str.toLowerCase().contains("__builtins__")) {
                             codeBuilder.append(str).append("\n");
                         }
                     }
                 } else {
                     for (String strRaw : arg.split("\n")) {
                         String str = strRaw.replaceAll("`", "");
-                        if (!str.toLowerCase().contains("import")) {
+                        if (!str.toLowerCase().contains("import") && !str.toLowerCase().contains("__builtins__")) {
                             codeBuilder.append(str).append("\n");
                         }
                     }
@@ -117,7 +117,7 @@ public class EvalCommand implements ICommand{
                         return output.toString();
                     }
                 } else if (exitVal == 124) {
-                    return "The command timeouted";
+                    return "Floppa doesn't have time for your bullshittery";
                 } else {
                     return "The command errored \n" + errorOut;
                 }
