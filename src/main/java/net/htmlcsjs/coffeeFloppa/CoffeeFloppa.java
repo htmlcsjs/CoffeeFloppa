@@ -8,6 +8,7 @@ import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import net.htmlcsjs.coffeeFloppa.commands.*;
+import net.htmlcsjs.coffeeFloppa.helpers.ExecHelper;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -78,6 +79,7 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new GithubIssueCommand());
         MessageHandler.addCommand(new AddonCommand());
         MessageHandler.addCommand(new QuestAdminCommand());
+        //MessageHandler.addCommand(new StoikCommand()); TODO
 
         try {
             if ((boolean) jsonData.get("evalEnabled")) {
@@ -106,6 +108,7 @@ public class CoffeeFloppa {
             MessageHandler.clearCommands();
             MessageHandler.clearSearchCommands();
             refreshCommands();
+            ExecHelper.initTextProcessingLists();
         } catch (Exception e) {
             e.printStackTrace();
         }
