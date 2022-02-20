@@ -124,4 +124,12 @@ public class ExecHelper {
         code = codeBuilder.toString();
         return code;
     }
+
+    public static List<String> getIllegalText() {
+        return illegalText;
+    }
+
+    public static List<String> getPrependStatements() {
+        return prependStatements;
+    }
 }
