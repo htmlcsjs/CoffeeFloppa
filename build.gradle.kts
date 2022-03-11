@@ -6,9 +6,10 @@ plugins {
 group = "net.htmlcsjs"
 version = "0.1.3"
 
-var d4jVersion = "3.2.1"
-var logbackVersion = "1.2.10"
-var simpleJSONVersion = "4.0.0"
+var d4jVersion = "3.2.2"
+var logbackVersion = "1.2.11"
+var simpleJSONVersion = "1.1.1"
+var fuzzywuzzyVersion = "1.4.0"
 
 repositories {
     mavenCentral()
@@ -26,8 +27,8 @@ application {
 dependencies {
     implementation("com.discord4j:discord4j-core:$d4jVersion")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
-    implementation("com.googlecode.json-simple:json-simple:1.1.1")
-    implementation("me.xdrop:fuzzywuzzy:1.4.0")
+    implementation("com.googlecode.json-simple:json-simple:$simpleJSONVersion")
+    implementation("me.xdrop:fuzzywuzzy:$fuzzywuzzyVersion")
 }
 
 tasks.withType<Jar> {
