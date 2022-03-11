@@ -35,9 +35,10 @@ jobs:
       - name: Attach dist zip
         uses: actions/upload-artifact@v2
         with:
-          name: distZip.zip
+          name: distZip
           path: build/distributions/*.zip
       - name: Attach jar
         uses: actions/upload-artifact@v2
         with:
+          name: floppaJar
           path: build/libs/*.jar
