@@ -1,5 +1,15 @@
 package net.htmlcsjs.coffeeFloppa.helpers;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.WaitContainerResultCallback;
+import com.github.dockerjava.api.model.Bind;
+import com.github.dockerjava.api.model.Volume;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.core.DockerClientImpl;
+import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
+import com.github.dockerjava.transport.DockerHttpClient;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.MessageCreateFields;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
@@ -7,6 +17,7 @@ import org.json.simple.JSONObject;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -16,12 +27,20 @@ public class ExecHelper {
 
     private static List<String> illegalText;
     private static List<String> prependStatements;
+    private static final DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
+    private static final DockerHttpClient client = new ApacheDockerHttpClient.Builder()
+            .dockerHost(config.getDockerHost())
+            .sslConfig(config.getSSLConfig())
+            .maxConnections(100)
+            .connectionTimeout(Duration.ofSeconds(30))
+            .responseTimeout(Duration.ofSeconds(45))
+            .build();
 
     public static void initTextProcessingLists() {
         JSONObject jsonData = CoffeeFloppa.getJsonData();
 
         illegalText = (List<String>) jsonData.getOrDefault("eval_illegal_text", Arrays.asList("import",
-                "__builtins__", "eval", "exec", "from"));
+                "__builtins__", "eval", "exec"));
         prependStatements = (List<String>) jsonData.getOrDefault("eval_prepend_statements", Arrays.asList(
                 "import math", "import numpy as np", "import pandas as pd", "import matplotlib.pyplot as plt",
                 "import copy", "import random"));
@@ -29,44 +48,47 @@ public class ExecHelper {
 
     public static String execString(String string, Message message) {
         try {
-            File pyFile = new File("tmp.py");
+            File pwd = new File("evalRun/");
+            pwd.mkdirs();
+            File pyFile = new File("evalRun/tmp.py");
             pyFile.delete();
-            FileWriter pyWriter = new FileWriter("tmp.py");
+            FileWriter pyWriter = new FileWriter("evalRun/tmp.py");
             pyWriter.write(processCode(string));
             pyWriter.close();
 
-            ProcessBuilder processBuilder = new ProcessBuilder();
-            processBuilder.command("timeout", "10", "python", "../tmp.py");
-            File pwd = new File("evalRun/");
-            pwd.mkdirs();
-            processBuilder.directory(pwd);
-            Process process = processBuilder.start();
+            DockerClient dockerClient = DockerClientImpl.getInstance(config, client);
+            CreateContainerResponse container = dockerClient.createContainerCmd("python:3.7")
+                    .withBinds(new Bind(pwd.getAbsolutePath(), new Volume("/opt/floppa/")))
+                    .withWorkingDir("/opt/floppa")
+                    .withName("floppaExec")
+                    .withCmd("python", "tmp.py", ">", "out.txt", "2>&1")
+                    .withStopTimeout(10000)
+                    .exec();
+            dockerClient.startContainerCmd(container.getId()).exec();
+
+            WaitContainerResultCallback callback = new WaitContainerResultCallback();
+            dockerClient.waitContainerCmd(container.getId()).exec(callback);
+            int exitVal = callback.awaitStatusCode();
+            dockerClient.removeContainerCmd(container.getId()).exec();
+
             StringBuilder output = new StringBuilder();
             output.append("```py\n");
-            StringBuilder errorOut = new StringBuilder();
-            errorOut.append("```py\n");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            BufferedReader reader = new BufferedReader(new FileReader("evalRun/out.txt"));
             String line;
             while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
+                output.append(line.replaceAll("[^A-Za-z0-9._~()\\[\\]{}\\n\\t'!*:,;+@?\\-/$ \\\\]", "█")).append("\n");
             }
-            while ((line = errorReader.readLine()) != null) {
-                errorOut.append(line).append("\n");
-            }
-            errorOut.append("\n```");
             output.append("\n```");
 
-            return handleOutput(process, message, output.toString(), errorOut.toString());
+            return handleOutput(exitVal, message, output.toString());
         } catch (Exception e) {
             e.printStackTrace();
             return "an error occurred";
         }
     }
 
-    private static String handleOutput(Process process, Message message, String output, String errorOut) throws InterruptedException {
-        int exitVal = process.waitFor();
-        if (exitVal == 0) {
+    private static String handleOutput(int exitVal, Message message, String output) throws InterruptedException {
+        if (exitVal == 0 || exitVal == 2) {
             List<MessageCreateFields.File> attachedFiles = new ArrayList<>();
             for (String str: output.split("\n")) {
                 if (!(str.equals("")) && str.charAt(0) == '$') {
@@ -80,7 +102,7 @@ public class ExecHelper {
                                 attachedFiles.add(MessageCreateFields.File.of(fileName, fileReader));
                             }
                         } catch (FileNotFoundException e) {
-                            message.getChannel().flatMap(channel -> channel.createMessage("Couldnt fine file with the name referanced\n```java\n" + e.getMessage() + "```"));
+                            message.getChannel().flatMap(channel -> channel.createMessage("Couldnt find file with the name referanced\n```java\n" + e.getMessage() + "```"));
                         }
                     }
                 }
@@ -108,7 +130,7 @@ public class ExecHelper {
         } else if (exitVal == 124) {
             return "Floppa doesn't have time for your bullshittery";
         } else {
-            return "The command errored \n" + errorOut;
+            return "The command errored \n" + output;
         }
     }
 

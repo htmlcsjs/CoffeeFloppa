@@ -23,8 +23,10 @@ public class MessageHandler {
     public static Mono<Object> normal(Message message) {
         String msgContent = message.getContent();
         // flop
-        if (String.join("", msgContent.toLowerCase().split(" ")).contains("flop")) {
-            EmojiData emojiData = CoffeeFloppa.client.getGuildEmojiById(Snowflake.of("664888369087512601"), Snowflake.of("853358698964713523")).getData().block();
+        if (String.join("", msgContent.toLowerCase().split(" ")).contains((String) CoffeeFloppa.emoteData.get("phrase"))) {
+            EmojiData emojiData = CoffeeFloppa.client.getGuildEmojiById(
+                    Snowflake.of((String) CoffeeFloppa.emoteData.get("guild")),
+                    Snowflake.of((String) CoffeeFloppa.emoteData.get("emote"))).getData().block();
             if (emojiData != null) {
                 message.addReaction(ReactionEmoji.of(emojiData)).subscribe();
                 CoffeeFloppa.increaseFlopCount();
@@ -34,7 +36,6 @@ public class MessageHandler {
         // If the first char is the prefix
         try {
             if (msgContent.charAt(0) == CoffeeFloppa.prefix && !message.getAuthor().get().isBot() && !message.mentionsEveryone()) {
-                message.getChannel().flatMap(MessageChannel::type).subscribe(); // set flop to writing
 
                 // get the command
                 String commandCall = msgContent.toLowerCase().split(" ")[0].replace(String.valueOf(CoffeeFloppa.prefix), " ").strip();
@@ -42,6 +43,7 @@ public class MessageHandler {
 
                 // we do a little bit of executing
                 if (command != null) {
+                    message.getChannel().flatMap(MessageChannel::type).subscribe(); // set flop to writing
                     String commandMessage = command.execute(message);
                     if (commandMessage != null && commandMessage.length() < 2000) {
                         return message.getChannel().flatMap(channel -> channel.createMessage(commandMessage)

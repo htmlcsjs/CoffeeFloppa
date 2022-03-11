@@ -16,10 +16,7 @@ import reactor.core.publisher.Mono;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class CoffeeFloppa {
     public static Random randomGen;
@@ -27,6 +24,7 @@ public class CoffeeFloppa {
     public static char prefix;
     public static Map<String, String> adminRolesByGuild;
     public static Snowflake admin;
+    public static Map<String, Object> emoteData;
 
     private static JSONObject jsonData;
 
@@ -78,6 +76,7 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new GithubIssueCommand());
         MessageHandler.addCommand(new AddonCommand());
         MessageHandler.addCommand(new QuestAdminCommand());
+        MessageHandler.addCommand(new RefreshCommand());
         //MessageHandler.addCommand(new StoikCommand()); TODO
 
         /*try {
@@ -107,6 +106,14 @@ public class CoffeeFloppa {
             MessageHandler.clearCommands();
             MessageHandler.clearSearchCommands();
             refreshCommands();
+            Map<String, Object> defaultEmoteData = new HashMap<>();
+            defaultEmoteData.put("guild", "664888369087512601");
+            defaultEmoteData.put("emote", "853358698964713523");
+            defaultEmoteData.put("phrase", "flop");
+            if (!jsonData.containsKey("flop_emote_data")) {
+                jsonData.put("flop_emote_data", defaultEmoteData);
+            }
+            emoteData = (Map<String, Object>) jsonData.get("flop_emote_data");
             //ExecHelper.initTextProcessingLists();
         } catch (Exception e) {
             e.printStackTrace();
@@ -120,7 +127,7 @@ public class CoffeeFloppa {
     public static void updateConfigFile(JSONObject jsonData) {
         try {
             FileWriter writer = new FileWriter("config.json");
-            writer.write(jsonData.toJSONString());
+            writer.write(formatJSONStr(jsonData.toJSONString(), 4));
             writer.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -134,4 +141,41 @@ public class CoffeeFloppa {
         newJsonData.put("flop", ++flopCount);
         updateConfigFile(newJsonData);
     }
+
+    private static String formatJSONStr(String jsonString, int indent_width) {
+        StringBuilder returnBuilder = new StringBuilder();
+        boolean inQuotes = false;
+        int indent = 0;
+
+        for (char c: jsonString.toCharArray()) {
+            if (c == '\"') {
+                returnBuilder.append(c);
+                inQuotes = !inQuotes;
+                continue;
+            } else if (!inQuotes) {
+                switch (c) {
+                    case '{':
+                    case '[':
+                        returnBuilder.append(c).append("\n").append(String.format("%" + (indent += indent_width) + "s", ""));
+                        continue;
+                    case '}':
+                    case ']':
+                        returnBuilder.append("\n").append((indent -= indent_width) > 0 ? String.format("%" + indent + "s", "") : "").append(c);
+                        continue;
+                    case ':':
+                        returnBuilder.append(c).append(" ");
+                        continue;
+                    case ',':
+                        returnBuilder.append(c).append("\n").append(indent > 0 ? String.format("%" + indent + "s", "") : "");
+                        continue;
+                    default:
+                        if (Character.isWhitespace(c)) continue;
+                }
+            }
+
+            returnBuilder.append(c);
+        }
+        return returnBuilder.toString();
+    }
+
 }
