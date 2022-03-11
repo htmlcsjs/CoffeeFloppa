@@ -20,6 +20,7 @@ public class StoikCommand implements ICommand {
            // return "No formula supplied";
         }
 
-        return "How tf you got here";
+        return "```";//json \n" + StringEscapeUtils.escapeJson(CommandUtil.getMessageJson(message).toJSONString()) + "```";
+        ///return "```json \n" + StringEscapeUtils.escapeJson(CommandUtil.getMessageJson(message).toJSONString()) + "```";
     }
 }

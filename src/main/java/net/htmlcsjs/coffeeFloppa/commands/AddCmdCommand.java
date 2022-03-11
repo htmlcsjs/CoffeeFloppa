@@ -32,7 +32,7 @@ public class AddCmdCommand implements ICommand {
             for (Object obj : (JSONArray) jsonData.get("commands")) {
                 Map<?, ?> commandMap = (Map<?, ?>) obj;
                 JSONArray newResponses = new JSONArray();
-                if (commandMap.get("call").equals(call)) {
+                if (((String)commandMap.get("call")).equalsIgnoreCase(call)) {
                     newResponses.add(response);
                     exists = true;
                 }

@@ -124,7 +124,7 @@ public class QuestAdminCommand implements ICommand{
                 for (StackTraceElement ste: e.getStackTrace()) {
                     stackTrace.append(ste).append("\n");
                 }
-                return "An error occurred:```java\n" + stackTrace + "```";
+                return "An error occurred:```java\n" + e.getMessage() + "\n" + stackTrace + "```";
             }
         } else {
             try {
@@ -140,7 +140,7 @@ public class QuestAdminCommand implements ICommand{
                 for (StackTraceElement ste: e.getStackTrace()) {
                     stackTrace.append(ste).append("\n");
                 }
-                return "An error occurred:```java\n" + stackTrace + "```";
+                return "An error occurred:```java\n" + e.getMessage() + "\n" + stackTrace + "```";
             }
         }
         return null;
