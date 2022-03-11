@@ -77,7 +77,7 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new AddonCommand());
         MessageHandler.addCommand(new QuestAdminCommand());
         MessageHandler.addCommand(new RefreshCommand());
-        //MessageHandler.addCommand(new StoikCommand()); TODO
+        MessageHandler.addCommand(new StoikCommand());
 
         /*try {
             if ((boolean) jsonData.get("evalEnabled")) {

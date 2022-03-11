@@ -14,7 +14,6 @@ public class HelpCommand implements ICommand {
 
     @Override
     public String execute(Message message) {
-        StringBuilder returnStringBuilder = new StringBuilder();
         return String.format("Command prefix is %c\nCommands avalible:\n", CoffeeFloppa.prefix) +
                 MessageHandler.getCommands().keySet().stream().sorted().collect(Collectors.joining(", "));
     }
