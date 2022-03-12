@@ -6,8 +6,6 @@ import discord4j.core.spec.EmbedCreateSpec;
 import java.util.*;
 
 public class StoikCommand implements ICommand {
-    private String elementMultiplier;
-
     @Override
     public String getName() {
         return "stoik";
@@ -27,17 +25,19 @@ public class StoikCommand implements ICommand {
 
         String[] formulaSides = formulaStr.split("->");
         if (formulaSides.length !=2) {
-            return "Error, malformed expression";
+            return """
+                    Error, malformed expression
+                    Please format equasion as `Reactant1 + Reactant2 -> Product1 + Product2`
+                    E.g. `6CO2 + CH2O -> C6H12O6 + 6O2`
+                    """;
         }
 
         List<String> reactants = new ArrayList<>();
         for (String formula: formulaSides[0].split("\\+")) {
-            elementMultiplier = "";
             reactants.addAll(parseChemical(formula));
         }
         List<String> products = new ArrayList<>();
         for (String formula: formulaSides[1].split("\\+")) {
-            elementMultiplier = "";
             products.addAll(parseChemical(formula));
         }
         reactants.removeAll(Collections.singleton(""));
@@ -72,7 +72,7 @@ public class StoikCommand implements ICommand {
             if (productsMap.getOrDefault(element, -1) == reactantsMap.getOrDefault(element, -1)) {
                 clayStrBuilder.append("✅\u2705");
             } else {
-                clayStrBuilder.append("\u274C");
+                clayStrBuilder.append("\u274C\u274C");
                 balanced = false;
             }
             productsStrBuilder.append(element).append(element.length() == 1 ? ":  " : ": ").append(productsMap.getOrDefault(element, 0)).append("\n");
@@ -106,76 +106,116 @@ public class StoikCommand implements ICommand {
     private List<String> parseChemical(String formula) {
         formula = formula.strip();
         List<String> elements = new ArrayList<>();
+        Status status = Status.LOOKING_COMPOUND_MULTIPLIER;
+        int bracketLevel = 0;
+        StringBuilder count = new StringBuilder();
+        StringBuilder element = new StringBuilder();
+        String multiplier = "1";
 
-        String inProgressElement = "";
-        String inProgressCount = "";
-
-        int subChemCount = 0;
-        boolean lookingForSubCount = false;
-        boolean lookingForMultiplier = false;
-        String[] splitFormula = formula.split("");
-        for (int i = 0; i < splitFormula.length; i++) {
-            String str = splitFormula[i];
-
-            if (str.equals("(")) {
-                subChemCount++;
-                if (subChemCount > 1) {
-                    inProgressElement += str;
+        for (int i = 0; i < formula.length(); i++) {
+            String character = formula.split("")[i];
+            if (status == Status.NORMAL) {
+                if (character.matches("[0-9]")) {
+                    count.append(character);
+                } else if (character.equals("(")) {
+                    bracketLevel++;
+                    status = Status.IN_BRACKET;
+                    addElements(elements, count, element, multiplier);
+                    count = new StringBuilder();
+                    element = new StringBuilder();
+                } else if (!character.matches("[a-z\\(\\)]")) {
+                    addElements(elements, count, element, multiplier);
+                    count = new StringBuilder();
+                    element = new StringBuilder(character);
+                } else if (!character.equals(")")){
+                    element.append(character);
                 }
-            } else if (str.equals(")")) {
-                if (subChemCount == 1) {
-                    lookingForSubCount = true;
+            } else if (status == Status.IN_BRACKET) {
+                if (character.equals("(")) {
+                    bracketLevel++;
+                } else if (character.equals(")")) {
+                    bracketLevel--;
+                    if (bracketLevel == 0) {
+                        status = Status.LOOKING_BRACKET_COUNT;
+                        continue;
+                    }
                 }
-                subChemCount--;
-                if (subChemCount > 0) {
-                    inProgressElement += str;
+                element.append(character);
+            } else if (status == Status.LOOKING_BRACKET_COUNT) {
+                if (character.matches("[0-9]")) {
+                    count.append(character);
+                } else {
+                    status = Status.NORMAL;
+                    if (count.isEmpty()) {
+                        count.append("1");
+                    }
+                    List<String> subchemParsed = parseChemical(element.toString());
+                    for (long j = 0; j < Long.parseLong(count.toString()) * Long.parseLong(multiplier); j++) {
+                        elements.addAll(subchemParsed);
+                    }
+                    count = new StringBuilder();
+                    element = new StringBuilder(character);
                 }
-            } else if (subChemCount > 0) {
-                inProgressElement += str;
-                continue;
-            } else if (str.matches("[A-Z?]")) {
-                elementDefEndHandler(elements, lookingForSubCount, inProgressCount, inProgressElement);
-
-                if (lookingForMultiplier) {
-                    lookingForMultiplier = false;
+            } else if (status == Status.LOOKING_COMPOUND_MULTIPLIER) {
+                if (character.matches("[0-9]")) {
+                    count.append(character);
+                } else if (character.equals("(")) {
+                    bracketLevel++;
+                    status = Status.IN_BRACKET;
+                    count = new StringBuilder();
+                    element = new StringBuilder();
+                } else {
+                    status = Status.NORMAL;
+                    if (i != 0) {
+                        multiplier = count.toString();
+                    }
+                    count = new StringBuilder();
+                    element.append(character);
                 }
-                inProgressCount = "";
-                inProgressElement = str;
-            } else if (str.matches("[0-9]")) {
-                if (i == 0) {
-                    lookingForMultiplier = true;
-                }
-                if (lookingForMultiplier) {
-                    elementMultiplier += str;
-                } else if (subChemCount == 0) {
-                    inProgressCount += str;
-                }
-            }  else {
-                inProgressElement += str;
-            }
-            if (i + 1 == splitFormula.length) {
-                elementDefEndHandler(elements, lookingForSubCount, inProgressCount, inProgressElement);
             }
         }
+        addElements(elements, count, element, multiplier);
+
         return elements;
     }
 
-    private void elementDefEndHandler(List<String> elements, boolean lookingForSubCount, String inProgressCount, String inProgressElement) {
-        if (inProgressCount.equals("")) {
-            inProgressCount = "1";
+    private void addElements(List<String> elements, StringBuilder count, StringBuilder element, String multiplier) {
+        if (element.toString().matches("[\\)\\(]")) {
+            return;
         }
-        if (elementMultiplier.equals("")) {
-            elementMultiplier = "1";
+        if (count.isEmpty()) {
+            count.append("1");
         }
-        if (lookingForSubCount) {
-            List<String> subChemAtoms = parseChemical(inProgressElement);
-            for (int i = 0; i < Long.parseLong(inProgressCount) * Long.parseLong(elementMultiplier); i++) {
-                elements.addAll(subChemAtoms);
-            }
-        } else {
-            for (int i = 0; i < Long.parseLong(inProgressCount) * Long.parseLong(elementMultiplier); i++) {
-                elements.add(inProgressElement);
-            }
+        for (long j = 0; j < Long.parseLong(count.toString()) * Long.parseLong(multiplier); j++) {
+            elements.add(element.toString());
         }
     }
+
+    private enum Status {
+        NORMAL,
+        IN_BRACKET,
+        LOOKING_BRACKET_COUNT,
+        LOOKING_COMPOUND_MULTIPLIER
+    }
 }
+
+/*                     bracketLevel++;
+                    addElements(elements, count, element, multiplier);
+                    count = new StringBuilder();
+                    element = new StringBuilder();
+
+                    int endPos = 0;
+                    for (int j = i; j < formula.length(); j++) {
+                        String bracketCharacter = formula.split("")[i];
+                        if (bracketCharacter.equals("(")) {
+                            bracketLevel++;
+                        } else if (bracketCharacter.equals(")")) {
+                            bracketLevel--;
+                            if (bracketLevel == 0) {
+                                endPos = j;
+                                break;
+                            }
+                        }
+                    }
+                    element.append(formula, i + 1, endPos + 1);
+                    i = endPos;*/
