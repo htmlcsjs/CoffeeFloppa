@@ -68,7 +68,7 @@ public class StoikCommand implements ICommand {
         elementKeys.addAll(productsMap.keySet());
         elementKeys.addAll(reactantsMap.keySet());
 
-        for (String element: elementKeys.stream().distinct().toList()) {
+        for (String element: elementKeys.stream().distinct().sorted().toList()) {
             if (productsMap.getOrDefault(element, -1) == reactantsMap.getOrDefault(element, -1)) {
                 clayStrBuilder.append("✅\u2705");
             } else {
@@ -145,16 +145,10 @@ public class StoikCommand implements ICommand {
                 if (character.matches("[0-9]")) {
                     count.append(character);
                 } else {
-                    status = Status.NORMAL;
-                    if (count.isEmpty()) {
-                        count.append("1");
-                    }
-                    List<String> subchemParsed = parseChemical(element.toString());
-                    for (long j = 0; j < Long.parseLong(count.toString()) * Long.parseLong(multiplier); j++) {
-                        elements.addAll(subchemParsed);
-                    }
+                    addElements(elements, count, element, multiplier, status);
                     count = new StringBuilder();
                     element = new StringBuilder(character);
+                    status = Status.NORMAL;
                 }
             } else if (status == Status.LOOKING_COMPOUND_MULTIPLIER) {
                 if (character.matches("[0-9]")) {
@@ -174,21 +168,33 @@ public class StoikCommand implements ICommand {
                 }
             }
         }
-        addElements(elements, count, element, multiplier);
+        addElements(elements, count, element, multiplier, status);
 
         return elements;
     }
 
-    private void addElements(List<String> elements, StringBuilder count, StringBuilder element, String multiplier) {
-        if (element.toString().matches("[\\)\\(]")) {
-            return;
-        }
+    private void addElements(List<String> elements, StringBuilder count, StringBuilder element, String multiplier, Status status) {
         if (count.isEmpty()) {
             count.append("1");
         }
-        for (long j = 0; j < Long.parseLong(count.toString()) * Long.parseLong(multiplier); j++) {
-            elements.add(element.toString());
+        long amount = Long.parseLong(count.toString()) * Long.parseLong(multiplier);
+        if (status == Status.LOOKING_BRACKET_COUNT) {
+            List<String> subchemParsed = parseChemical(element.toString());
+            for (long j = 0; j < amount; j++) {
+                elements.addAll(subchemParsed);
+            }
+        } else {
+            if (element.toString().matches("[\\)\\(]")) {
+                return;
+            }
+            for (long j = 0; j < amount; j++) {
+                elements.add(element.toString());
+            }
         }
+    }
+
+    private void addElements(List<String> elements, StringBuilder count, StringBuilder element, String multiplier) {
+        addElements(elements, count, element, multiplier, Status.NORMAL);
     }
 
     private enum Status {
