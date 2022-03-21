@@ -156,6 +156,9 @@ public class StoikCommand implements ICommand {
                 } else if (character.equals("(")) {
                     bracketLevel++;
                     status = Status.IN_BRACKET;
+                    if (i != 0) {
+                        multiplier = count.toString();
+                    }
                     count = new StringBuilder();
                     element = new StringBuilder();
                 } else {
