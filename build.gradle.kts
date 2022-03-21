@@ -29,6 +29,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("com.googlecode.json-simple:json-simple:$simpleJSONVersion")
     implementation("me.xdrop:fuzzywuzzy:$fuzzywuzzyVersion")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
 }
 
 tasks.withType<Jar> {
@@ -36,3 +37,17 @@ tasks.withType<Jar> {
         attributes["Main-Class"] = "net.htmlcsjs.coffeeFloppa.CoffeeFloppa"
     }
 }
+
+tasks.withType<Test>() {
+    testLogging {
+        events("failed")
+        showExceptions = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStackTraces = true
+        showCauses = true
+        showStandardStreams = false
+    }
+    useJUnitPlatform()
+}
+
+

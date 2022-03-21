@@ -103,7 +103,7 @@ public class StoikCommand implements ICommand {
 
     }
 
-    private List<String> parseChemical(String formula) {
+    public static List<String> parseChemical(String formula) {
         formula = formula.strip();
         List<String> elements = new ArrayList<>();
         Status status = Status.LOOKING_COMPOUND_MULTIPLIER;
@@ -176,7 +176,7 @@ public class StoikCommand implements ICommand {
         return elements;
     }
 
-    private void addElements(List<String> elements, StringBuilder count, StringBuilder element, String multiplier, Status status) {
+    private static void addElements(List<String> elements, StringBuilder count, StringBuilder element, String multiplier, Status status) {
         if (count.isEmpty()) {
             count.append("1");
         }
@@ -196,7 +196,7 @@ public class StoikCommand implements ICommand {
         }
     }
 
-    private void addElements(List<String> elements, StringBuilder count, StringBuilder element, String multiplier) {
+    private static void addElements(List<String> elements, StringBuilder count, StringBuilder element, String multiplier) {
         addElements(elements, count, element, multiplier, Status.NORMAL);
     }
 
