@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "net.htmlcsjs"
-version = "0.1.3"
+version = "0.1.4"
 
 var d4jVersion = "3.2.2"
 var logbackVersion = "1.2.11"
