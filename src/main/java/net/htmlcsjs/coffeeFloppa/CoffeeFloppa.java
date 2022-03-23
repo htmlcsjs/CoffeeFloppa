@@ -8,6 +8,7 @@ import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import net.htmlcsjs.coffeeFloppa.commands.*;
+import net.htmlcsjs.coffeeFloppa.helpers.lua.LuaHelper;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -79,11 +80,9 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new RefreshCommand());
         MessageHandler.addCommand(new StoikCommand());
 
-        /*try {
-            if ((boolean) jsonData.get("evalEnabled")) {
-                MessageHandler.addCommand(new EvalCommand()); todo make not shit
-            }
-        } catch (Exception ignored) {}*/
+        if ((boolean) jsonData.getOrDefault("evalEnabled", false)) {
+            MessageHandler.addCommand(new EvalCommand());
+        }
         for (String name: (List<String>) jsonData.getOrDefault("quest_books", Collections.EMPTY_LIST)) {
             MessageHandler.addCommand(new QuestbookCommand(name));
         }
@@ -106,6 +105,7 @@ public class CoffeeFloppa {
             MessageHandler.clearCommands();
             MessageHandler.clearSearchCommands();
             refreshCommands();
+            LuaHelper.initLuaServer();
             Map<String, Object> defaultEmoteData = new HashMap<>();
             defaultEmoteData.put("guild", "664888369087512601");
             defaultEmoteData.put("emote", "853358698964713523");
@@ -114,7 +114,6 @@ public class CoffeeFloppa {
                 jsonData.put("flop_emote_data", defaultEmoteData);
             }
             emoteData = (Map<String, Object>) jsonData.get("flop_emote_data");
-            //ExecHelper.initTextProcessingLists();
         } catch (Exception e) {
             e.printStackTrace();
         }

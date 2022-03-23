@@ -25,10 +25,12 @@ application {
 
 
 dependencies {
-    implementation("com.discord4j:discord4j-core:$d4jVersion")
-    implementation("ch.qos.logback:logback-classic:$logbackVersion")
-    implementation("com.googlecode.json-simple:json-simple:$simpleJSONVersion")
-    implementation("me.xdrop:fuzzywuzzy:$fuzzywuzzyVersion")
+    implementation("com.discord4j:discord4j-core:3.2.2")
+    implementation("ch.qos.logback:logback-classic:1.2.11")
+    implementation("com.googlecode.json-simple:json-simple:1.1.1")
+    implementation("me.xdrop:fuzzywuzzy:1.4.0")
+    implementation("org.luaj:luaj-jse:3.0.1")
+
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
 }
 
