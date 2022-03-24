@@ -32,7 +32,7 @@ public class EvalCommand implements ICommand{
             if (returnValue.checkboolean(1)) {
                 LuaValue returnedData = returnValue.arg(2);
                 if (returnedData.istable()) {
-                    msgStr.append("```lua\n").append(LuaHelper.luaTableToString(returnedData.checktable(), 4)).append("```\n");
+                    msgStr.append("```lua\n").append(LuaHelper.startLuaTableToStr(returnedData.checktable())).append("```\n");
                 } else {
                     msgStr.append(returnedData).append("\n");
                 }

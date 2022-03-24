@@ -1,8 +1,8 @@
 package net.htmlcsjs.coffeeFloppa.helpers.lua;
 
 import org.luaj.vm2.Globals;
-import org.luaj.vm2.LuaString;
 import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.PackageLib;
 
@@ -12,10 +12,6 @@ import java.util.List;
 
 public class FloppaPackageLib extends PackageLib {
 
-    /* Copy pasted from https://github.com/luaj/luaj/blob/daf3da94e3cdba0ac6a289148d7e38bd53d3fe64/src/core/org/luaj/vm2/lib/PackageLib.java, all just consts */
-    private static final LuaString _LOADED      = valueOf("loaded");
-    private static final LuaString _SEARCHERS   = valueOf("searchers");
-    private static final LuaString _SENTINEL    = valueOf("\u0001");
     private static final List<String> classBlacklist = new ArrayList<>(Collections.singletonList("org.luaj.vm2.lib.DebugLib'"));
 
     public static void addClassToBlacklist(String className) {
@@ -25,14 +21,7 @@ public class FloppaPackageLib extends PackageLib {
     @Override
     public LuaValue call(LuaValue modname, LuaValue env) {
         super.call(modname, env);
-        /*// reflection stuff 2
-        // WHYYYYYYYYYYYYY (this is very hacky)
-        try {
-            globals = (Globals) this.getClass().getField("globals").get(this);
-        } catch (Exception ignored) {
-            FloppaLogger.logger.error("Couldn't find the globals field in " + this.classnamestub());
-            return LuaValue.NIL;
-        }*/
+        this.java_searcher = new flop_java_searcher();
         Globals globals = env.checkglobals();
 
         globals.set("require", new requireFlop());
@@ -46,6 +35,12 @@ public class FloppaPackageLib extends PackageLib {
             } else {
                 return new require().call(arg); // super call
             }
+        }
+    }
+
+    public class flop_java_searcher extends PackageLib.java_searcher {
+        public Varargs invoke(Varargs args) {
+            return valueOf("no");
         }
     }
 }

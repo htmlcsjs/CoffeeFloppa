@@ -6,10 +6,14 @@ import org.luaj.vm2.lib.*;
 import org.luaj.vm2.lib.jse.JseBaseLib;
 import org.luaj.vm2.lib.jse.JseMathLib;
 
+import java.util.ArrayList;
+import java.util.List;
+
 // Adapted from https://github.com/luaj/luaj/blob/master/examples/jse/SampleSandboxed.java
 public class LuaHelper {
     private static Globals server_globals;
     private static final int tabSize = 4;
+    private static final List<LuaTable> hitTables = new ArrayList<>();
 
     public static void initLuaServer() {
         // Create server globals with just enough library support to compile user scripts.
@@ -46,6 +50,7 @@ public class LuaHelper {
         user_globals.load(new DebugLib());
         LuaValue sethook = user_globals.get("debug").get("sethook");
         user_globals.set("debug", LuaValue.NIL);
+        user_globals.get("package").get("loaded").set("debug", LuaValue.NIL); // :trollge:
 
         // Set up the script to run in its own thread, allowing for our timeout
         // Note that the environment is set to the user globals, however compiling is done with the server globals.
@@ -69,7 +74,14 @@ public class LuaHelper {
         return thread.resume(LuaValue.NIL);
     }
 
-    public static String luaTableToString(LuaTable table, long tabLevel) {
+    public static String startLuaTableToStr(LuaTable table) {
+        hitTables.clear();
+        String tableStr = luaTableToString(table, tabSize);
+        hitTables.clear();
+        return tableStr;
+    }
+
+    private static String luaTableToString(LuaTable table, long tabLevel) {
         StringBuilder tableStrBuilder = new StringBuilder("{\n");
         for (LuaValue key: table.keys()) {
             LuaValue value = table.get(key);
@@ -81,16 +93,22 @@ public class LuaHelper {
             if (key.isstring()){
                 tableStrBuilder.append("\"").append(key).append("\"");
             } else {
-                tableStrBuilder.append(key).append(",");
+                tableStrBuilder.append(key);
             }
 
             if (value.istable()) {
-                tableStrBuilder.append(": ").append(luaTableToString(value.checktable(), tabLevel + tabSize)).append(",").append("\n");
+                if (!hitTables.contains(value.checktable())) {
+                    hitTables.add(value.checktable());
+                    tableStrBuilder.append(": ").append(luaTableToString(value.checktable(), tabLevel + tabSize)).append(",").append("\n");
+                } else {
+                    return "<recursive table acquired>";
+                }
             } else if (value.isstring()){
                 tableStrBuilder.append(": \"").append(value).append("\",").append("\n");
             } else {
                 tableStrBuilder.append(": ").append(value).append(",").append("\n");
             }
+
         }
         for (int i = 0; i < tabLevel - tabSize; i++) {
             tableStrBuilder.append(' ');
