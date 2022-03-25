@@ -26,6 +26,8 @@ public class CoffeeFloppa {
     public static Map<String, String> adminRolesByGuild;
     public static Snowflake admin;
     public static Map<String, Object> emoteData;
+    public static String version = "@VERSION@";
+    public static String gitRef = "@GIT_VER@";
 
     private static JSONObject jsonData;
 
@@ -54,13 +56,13 @@ public class CoffeeFloppa {
                     .then();
 
             // Message handling
-            Mono<Void> handlePingCommand = gateway.on(MessageCreateEvent.class, event -> {
+            Mono<Void> handleCommand = gateway.on(MessageCreateEvent.class, event -> {
                 Message message = event.getMessage();
                 return MessageHandler.normal(message);
             }).doOnError(System.out::println).then();
 
             // we do a little combining
-            return printOnLogin.and(handlePingCommand).doOnError(System.out::println);
+            return printOnLogin.and(handleCommand).doOnError(System.out::println);
         });
 
         login.block();
@@ -79,6 +81,7 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new QuestAdminCommand());
         MessageHandler.addCommand(new RefreshCommand());
         MessageHandler.addCommand(new StoikCommand());
+        MessageHandler.addCommand(new VersionCommand());
 
         if ((boolean) jsonData.getOrDefault("evalEnabled", false)) {
             MessageHandler.addCommand(new EvalCommand());

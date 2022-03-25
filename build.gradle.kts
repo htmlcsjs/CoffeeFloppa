@@ -1,6 +1,9 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 plugins {
     java
     application
+    id("org.ajoberstar.grgit") version "5.0.0"
 }
 
 group = "net.htmlcsjs"
@@ -23,7 +26,6 @@ application {
     tasks.run.get().workingDir = File("run/")
 }
 
-
 dependencies {
     implementation("com.discord4j:discord4j-core:3.2.2")
     implementation("ch.qos.logback:logback-classic:1.2.11")
@@ -34,22 +36,37 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
 }
 
-tasks.withType<Jar> {
-    manifest {
-        attributes["Main-Class"] = "net.htmlcsjs.coffeeFloppa.CoffeeFloppa"
+tasks.create<Copy> ("generateSource") {
+    from("src") {
+        filter(ReplaceTokens::class, "tokens" to mapOf("VERSION" to version, "GIT_VER" to grgit.head().id))
     }
+    into("$buildDir/sources/src")
 }
 
-tasks.withType<Test>() {
-    testLogging {
-        events("failed")
-        showExceptions = true
-        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-        showStackTraces = true
-        showCauses = true
-        showStandardStreams = false
+tasks {
+    jar {
+        manifest {
+            attributes["Main-Class"] = "net.htmlcsjs.coffeeFloppa.CoffeeFloppa"
+        }
     }
-    useJUnitPlatform()
+    test {
+        testLogging {
+            events("failed")
+            showExceptions = true
+            exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+            showStackTraces = true
+            showCauses = true
+            showStandardStreams = false
+        }
+        useJUnitPlatform()
+    }
+    compileJava {
+        dependsOn("generateSource")
+        setSource("$buildDir/sources/src/main")
+    }
+    compileTestJava {
+        dependsOn("generateSource")
+        setSource("$buildDir/sources/src/test")
+    }
 }
-
 
