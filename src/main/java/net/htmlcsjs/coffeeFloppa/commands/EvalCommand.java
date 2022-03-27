@@ -29,10 +29,16 @@ public class EvalCommand implements ICommand{
             Varargs returnValue = LuaHelper.runScriptInSandbox(code);
 
             StringBuilder msgStr = new StringBuilder();
+            boolean isPrintEmpty = LuaHelper.getPrintBufferContents().isEmpty();
+            if (!isPrintEmpty) {
+                msgStr.append(LuaHelper.getPrintBufferContents()).append("\n");
+            }
             if (returnValue.checkboolean(1)) {
                 LuaValue returnedData = returnValue.arg(2);
                 if (returnedData.istable()) {
                     msgStr.append("```lua\n").append(LuaHelper.startLuaTableToStr(returnedData.checktable())).append("```\n");
+                } else if (returnedData.isnil() && !isPrintEmpty) {
+                    //pass
                 } else {
                     msgStr.append(returnedData).append("\n");
                 }

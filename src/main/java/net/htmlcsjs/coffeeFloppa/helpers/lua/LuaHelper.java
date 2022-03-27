@@ -14,6 +14,7 @@ public class LuaHelper {
     private static Globals server_globals;
     private static final int tabSize = 4;
     private static final List<LuaTable> hitTables = new ArrayList<>();
+    private static StringBuilder printBuffer = new StringBuilder();
 
     public static void initLuaServer() {
         // Create server globals with just enough library support to compile user scripts.
@@ -37,6 +38,8 @@ public class LuaHelper {
      */
     public static Varargs runScriptInSandbox(String script) {
 
+        printBuffer = new StringBuilder();
+
         Globals user_globals = new Globals();
         user_globals.load(new JseBaseLib());
         user_globals.load(new FloppaPackageLib());
@@ -44,6 +47,8 @@ public class LuaHelper {
         user_globals.load(new TableLib());
         user_globals.load(new StringLib());
         user_globals.load(new JseMathLib());
+        user_globals.load(new FloppaLuaLib());
+        user_globals.set("print", new PrintFunc());
 
         // The debug library must be loaded for hook functions to work, which we use for timeout
         // However it can be **heavily** abused so we disable the rest of it
@@ -115,5 +120,17 @@ public class LuaHelper {
         }
         tableStrBuilder.append("}");
         return tableStrBuilder.toString();
+    }
+
+    public static class PrintFunc extends VarArgFunction {
+        @Override
+        public Varargs invoke(Varargs args) {
+            printBuffer.append(args.tojstring());
+            return LuaValue.NIL;
+        }
+    }
+
+    public static String getPrintBufferContents() {
+        return printBuffer.toString();
     }
 }

@@ -32,6 +32,7 @@ dependencies {
     implementation("com.googlecode.json-simple:json-simple:1.1.1")
     implementation("me.xdrop:fuzzywuzzy:1.4.0")
     implementation("org.luaj:luaj-jse:3.0.1")
+    implementation("org.jetbrains:annotations:23.0.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
 }

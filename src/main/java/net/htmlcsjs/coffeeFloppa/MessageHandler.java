@@ -21,6 +21,9 @@ public class MessageHandler {
     private static final Map<String, ICommand> searchCommands = new HashMap<>();
 
     public static Mono<Object> normal(Message message) {
+        if (message == null) {
+            return Mono.empty();
+        }
         String msgContent = message.getContent();
         // flop
         if (String.join("", msgContent.toLowerCase().split(" ")).contains((String) CoffeeFloppa.emoteData.get("phrase"))) {
@@ -45,7 +48,7 @@ public class MessageHandler {
                 if (command != null) {
                     message.getChannel().flatMap(MessageChannel::type).subscribe(); // set flop to writing
                     String commandMessage = command.execute(message);
-                    if (commandMessage != null && commandMessage.length() < 2000) {
+                    if (commandMessage != null && commandMessage.length() <= 2000) {
                         return message.getChannel().flatMap(channel -> channel.createMessage(commandMessage)
                                 .withMessageReference(message.getId()));
                     } else if (commandMessage != null){
