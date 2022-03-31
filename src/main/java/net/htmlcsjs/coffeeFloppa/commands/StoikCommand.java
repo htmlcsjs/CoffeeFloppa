@@ -22,13 +22,14 @@ public class StoikCommand implements ICommand {
         }
 
         formulaStr = formulaStr.replace("`", "");
+        formulaStr = formulaStr.replace("=", "->");
 
         String[] formulaSides = formulaStr.split("->");
         if (formulaSides.length !=2) {
             return """
                     Error, malformed expression
                     Please format equasion as `Reactant1 + Reactant2 -> Product1 + Product2`
-                    E.g. `6CO2 + CH2O -> C6H12O6 + 6O2`
+                    E.g. `6CO2 + 6H2O -> C6H12O6 + 6O2`
                     """;
         }
 
@@ -69,7 +70,7 @@ public class StoikCommand implements ICommand {
         elementKeys.addAll(reactantsMap.keySet());
 
         for (String element: elementKeys.stream().distinct().sorted().toList()) {
-            if (productsMap.getOrDefault(element, -1) == reactantsMap.getOrDefault(element, -1)) {
+            if (productsMap.getOrDefault(element, -1).equals(reactantsMap.getOrDefault(element, -1))) {
                 clayStrBuilder.append("✅\u2705");
             } else {
                 clayStrBuilder.append("\u274C\u274C");
@@ -207,24 +208,3 @@ public class StoikCommand implements ICommand {
         LOOKING_COMPOUND_MULTIPLIER
     }
 }
-
-/*                     bracketLevel++;
-                    addElements(elements, count, element, multiplier);
-                    count = new StringBuilder();
-                    element = new StringBuilder();
-
-                    int endPos = 0;
-                    for (int j = i; j < formula.length(); j++) {
-                        String bracketCharacter = formula.split("")[i];
-                        if (bracketCharacter.equals("(")) {
-                            bracketLevel++;
-                        } else if (bracketCharacter.equals(")")) {
-                            bracketLevel--;
-                            if (bracketLevel == 0) {
-                                endPos = j;
-                                break;
-                            }
-                        }
-                    }
-                    element.append(formula, i + 1, endPos + 1);
-                    i = endPos;*/
