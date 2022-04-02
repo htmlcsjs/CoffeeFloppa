@@ -106,14 +106,18 @@ public class FloppaLuaLib extends TwoArgFunction {
                         TextChannel textChannel = (TextChannel) channelJava;
                         channelData.set("rate_limit", textChannel.getRateLimitPerUser());
                         channelData.set("is_nsfw", LuaValue.valueOf(textChannel.isNsfw()));
-                        List<Message> messagesBefore = textChannel.getMessagesBefore(message.getId()).collectList().block();
+                        /*List<Message> messagesBefore = textChannel.getMessagesBefore(message.getId()).collectList().block();
                         if (messagesBefore != null) {
                             List<String> messageIds = messagesBefore.stream().map(msg -> msg.getId().asString()).toList();
                             if (!messageIds.isEmpty()) {
                                 channelData.set("last_messages", LuaHelper.getLuaValueFromList(messageIds.subList(0, Math.min(messageIds.size(), 20))));
                             }
-                        }
+                        } laggy as fuck, crashes on my pi*/
 
+                        Message lastMsg = textChannel.getLastMessage().block();
+                        if (lastMsg != null) {
+                            channelData.set("last_message", lastMsg.getId().asString());
+                        }
                         Optional<String> topic = textChannel.getTopic();
                         topic.ifPresent(str -> channelData.set("topic", str));
                         Category category = textChannel.getCategory().block();
