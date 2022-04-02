@@ -1,5 +1,6 @@
 package net.htmlcsjs.coffeeFloppa.helpers.lua;
 
+import discord4j.core.object.entity.Message;
 import org.luaj.vm2.*;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.*;
@@ -36,7 +37,7 @@ public class LuaHelper {
      *
      * @return the return args form the script
      */
-    public static Varargs runScriptInSandbox(String script) {
+    public static Varargs runScriptInSandbox(String script, Message message) {
 
         printBuffer = new StringBuilder();
 
@@ -47,8 +48,9 @@ public class LuaHelper {
         user_globals.load(new TableLib());
         user_globals.load(new StringLib());
         user_globals.load(new JseMathLib());
-        user_globals.load(new FloppaLuaLib());
+        user_globals.load(new FloppaLuaLib(message));
         user_globals.set("print", new PrintFunc());
+        user_globals.set("maths", user_globals.get("math"));
 
         // The debug library must be loaded for hook functions to work, which we use for timeout
         // However it can be **heavily** abused so we disable the rest of it
@@ -125,12 +127,21 @@ public class LuaHelper {
     public static class PrintFunc extends VarArgFunction {
         @Override
         public Varargs invoke(Varargs args) {
-            printBuffer.append(args.tojstring());
+            printBuffer.append(args.tojstring()).append("\n");
             return LuaValue.NIL;
         }
     }
 
     public static String getPrintBufferContents() {
         return printBuffer.toString();
+    }
+
+    public static LuaValue getLuaValueFromList(List<?> list) {
+        LuaValue array = LuaValue.tableOf();
+        for (int i = 0; i < list.size(); i++) {
+            Object element = list.get(i);
+            array.set(i+1, element.toString());
+        }
+        return array;
     }
 }

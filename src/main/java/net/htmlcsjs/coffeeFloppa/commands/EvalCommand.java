@@ -26,7 +26,7 @@ public class EvalCommand implements ICommand{
         }
 
         try {
-            Varargs returnValue = LuaHelper.runScriptInSandbox(code);
+            Varargs returnValue = LuaHelper.runScriptInSandbox(code, message);
 
             StringBuilder msgStr = new StringBuilder();
             boolean isPrintEmpty = LuaHelper.getPrintBufferContents().isEmpty();
