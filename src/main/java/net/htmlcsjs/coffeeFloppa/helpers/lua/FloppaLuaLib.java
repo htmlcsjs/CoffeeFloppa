@@ -11,8 +11,8 @@ import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.TwoArgFunction;
 import org.luaj.vm2.lib.ZeroArgFunction;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class FloppaLuaLib extends TwoArgFunction {
     private final Message message;
@@ -74,7 +74,11 @@ public class FloppaLuaLib extends TwoArgFunction {
             messageCurrent.getAuthor().ifPresent(author -> messageData.set("author", author.getId().asString()));
             messageData.set("id", messageCurrent.getId().asString());
             messageData.set("content", messageCurrent.getContent());
-            messageData.set("attachments", LuaHelper.getLuaValueFromList(messageCurrent.getAttachments().stream().map(Attachment::getUrl).collect(Collectors.toList())));
+            messageData.set("channel", messageCurrent.getChannelId().asString());
+            List<String> attachmentList = messageCurrent.getAttachments().stream().map(Attachment::getUrl).toList();
+            if (!attachmentList.isEmpty()) {
+                messageData.set("attachments", LuaHelper.getLuaValueFromList(attachmentList));
+            }
             return messageData;
         }
     }
@@ -102,9 +106,14 @@ public class FloppaLuaLib extends TwoArgFunction {
                         TextChannel textChannel = (TextChannel) channelJava;
                         channelData.set("rate_limit", textChannel.getRateLimitPerUser());
                         channelData.set("is_nsfw", LuaValue.valueOf(textChannel.isNsfw()));
+                        List<Message> messagesBefore = textChannel.getMessagesBefore(message.getId()).collectList().block();
+                        if (messagesBefore != null) {
+                            List<String> messageIds = messagesBefore.stream().map(msg -> msg.getId().asString()).toList();
+                            if (!messageIds.isEmpty()) {
+                                channelData.set("last_messages", LuaHelper.getLuaValueFromList(messageIds.subList(0, Math.min(messageIds.size(), 20))));
+                            }
+                        }
 
-                        Optional<Snowflake> lastMessageId = textChannel.getLastMessageId();
-                        lastMessageId.ifPresent(snowflake -> channelData.set("last_message", snowflake.asString()));
                         Optional<String> topic = textChannel.getTopic();
                         topic.ifPresent(str -> channelData.set("topic", str));
                         Category category = textChannel.getCategory().block();
@@ -117,9 +126,8 @@ public class FloppaLuaLib extends TwoArgFunction {
                         channelData.set("bitrate", vc.getBitrate());
                         channelData.set("user_limit", vc.getUserLimit());
                         channelData.set("video_quality_mode", vc.getVideoQualityMode().name());
+                        channelData.set("region", vc.getRtcRegion().getValue());
 
-                        Optional<Snowflake> lastMessageId = vc.getLastMessageId();
-                        lastMessageId.ifPresent(snowflake -> channelData.set("last_message", snowflake.asString()));
                         Optional<String> topic = vc.getTopic();
                         topic.ifPresent(str -> channelData.set("topic", str));
                         Category category = vc.getCategory().block();
