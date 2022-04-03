@@ -1,6 +1,7 @@
 package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.core.object.entity.Message;
+import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import net.htmlcsjs.coffeeFloppa.helpers.lua.LuaHelper;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
@@ -14,16 +15,7 @@ public class EvalCommand implements ICommand{
     @Override
     public String execute(Message message) {
         String code = message.getContent().substring(getName().length() + 1);
-        if (code.indexOf("```") == 1) {
-            code = code.substring(3);
-        } else if (code.indexOf("`") == 1) {
-            code = code.substring(2);
-        }
-        if (code.lastIndexOf("```") == code.length()-3) {
-            code = code.substring(0, code.length()-4);
-        } else if (code.lastIndexOf("`") == code.length()-1) {
-            code = code.substring(0, code.length()-2);
-        }
+        code = code.replace("`", "");
 
         try {
             Varargs returnValue = LuaHelper.runScriptInSandbox(code, message);
@@ -50,16 +42,7 @@ public class EvalCommand implements ICommand{
 
             return msgStr.toString();
         } catch (Exception e) {
-            StringBuilder stackTrace = new StringBuilder();
-            int i = 0;
-            for (StackTraceElement ste: e.getStackTrace()) {
-                stackTrace.append(ste).append("\n");
-                if (i > 20) {
-                    break;
-                }
-                i++;
-            }
-            return "An error occurred:```java\n" + e.getMessage() + "\n" + stackTrace + "```";
+            return "An error occurred:```java\n" + e.getMessage() + "\n" + CommandUtil.getStackTraceToString(e, 20) + "```";
         }
     }
 }

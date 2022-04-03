@@ -120,11 +120,7 @@ public class QuestAdminCommand implements ICommand{
                 fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
                 fileOutputStream.close();
             } catch (Exception e) {
-                StringBuilder stackTrace = new StringBuilder();
-                for (StackTraceElement ste: e.getStackTrace()) {
-                    stackTrace.append(ste).append("\n");
-                }
-                return "An error occurred:```java\n" + e.getMessage() + "\n" + stackTrace + "```";
+                return "An error occurred:```java\n" + e.getMessage() + "\n" + CommandUtil.getStackTraceToString(e) + "```";
             }
         } else {
             try {
@@ -136,11 +132,8 @@ public class QuestAdminCommand implements ICommand{
                 fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
                 fileOutputStream.close();
             } catch (Exception e) {
-                StringBuilder stackTrace = new StringBuilder();
-                for (StackTraceElement ste: e.getStackTrace()) {
-                    stackTrace.append(ste).append("\n");
-                }
-                return "An error occurred:```java\n" + e.getMessage() + "\n" + stackTrace + "```";
+
+                return "An error occurred:```java\n" + e.getMessage() + "\n" + CommandUtil.getStackTraceToString(e) + "```";
             }
         }
         return null;

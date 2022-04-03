@@ -51,4 +51,21 @@ public class CommandUtil {
         }
         return messageData;
     }
+
+    public static String getStackTraceToString(Exception e, int limit) {
+        StringBuilder stackTrace = new StringBuilder();
+        int i = 0;
+        for (StackTraceElement ste: e.getStackTrace()) {
+            stackTrace.append(ste).append("\n");
+            if (i > limit) {
+                break;
+            }
+            i++;
+        }
+        return stackTrace.toString();
+    }
+
+    public static String getStackTraceToString(Exception e) {
+        return getStackTraceToString(e, e.getStackTrace().length);
+    }
 }
