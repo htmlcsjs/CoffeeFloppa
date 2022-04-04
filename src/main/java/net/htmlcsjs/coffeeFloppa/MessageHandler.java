@@ -80,7 +80,7 @@ public class MessageHandler {
                         .withAllowedMentions(AllowedMentions.suppressEveryone()));
             }
         }
-        return null;
+        return Mono.empty();
     }
 
 
