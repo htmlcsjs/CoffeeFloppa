@@ -13,6 +13,7 @@ import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.TwoArgFunction;
 import org.luaj.vm2.lib.ZeroArgFunction;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Optional;
 

@@ -83,6 +83,7 @@ public class CommandUtil {
         return getStackTraceToString(e, e.getStackTrace().length);
     }
 
+
     public static String getAttachment(Message message) throws IOException, IllegalArgumentException {
         URL url;
         if (message.getAttachments().size() > 0) {
