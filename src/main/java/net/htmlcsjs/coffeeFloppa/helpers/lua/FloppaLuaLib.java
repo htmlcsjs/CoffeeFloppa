@@ -8,6 +8,7 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.spec.MessageCreateFields;
 import discord4j.rest.util.Color;
+import discord4j.rest.util.Image;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import org.luaj.vm2.LuaValue;
@@ -191,19 +192,22 @@ public class FloppaLuaLib extends TwoArgFunction {
                 LuaValue memberData = tableOf();
 
                 member.getAccentColor().ifPresent(colour -> memberData.set("accent_colour", CommandUtil.getHexValueFromColour(colour)));
+                memberData.set("animated_avatar", valueOf(member.hasAnimatedAvatar()));
+                memberData.set("animated_banner", valueOf(member.hasAnimatedBanner()));
+                memberData.set("animated_guild_avatar", valueOf(member.hasAnimatedGuildAvatar()));
+                memberData.set("avatar_url", member.getAvatarUrl());
                 member.getBannerUrl().ifPresent(url -> memberData.set("banner_url", url));
+                memberData.set("bot", valueOf(member.isBot()));
                 Color colour = member.getColor().block();
                 if (colour != null) {
                     memberData.set("colour", CommandUtil.getHexValueFromColour(colour));
                 }
                 memberData.set("discriminator", member.getDiscriminator());
                 memberData.set("display_name", member.getDisplayName());
-                memberData.set("effective_avatar_url", member.getEffectiveAvatarUrl());
+                memberData.set("default_avatar_url", member.getDefaultAvatarUrl());
                 List<String> flags = member.getPublicFlags().stream().map(Enum::name).toList();
                 memberData.set("flags", LuaHelper.getLuaValueFromList(flags));
-                memberData.set("hasAnimatedAvatar", valueOf(member.hasAnimatedAvatar()));
-                memberData.set("hasAnimatedBanner", valueOf(member.hasAnimatedBanner()));
-                memberData.set("isBot", valueOf(member.isBot()));
+                member.getGuildAvatarUrl(member.hasAnimatedGuildAvatar() ? Image.Format.GIF : Image.Format.PNG).ifPresent(url -> memberData.set("guild_avatar", url));
                 member.getNickname().ifPresent(nick -> memberData.set("nick", nick));
                 List<String> roleIds = member.getRoleIds().stream().map(Snowflake::asString).toList();
                 memberData.set("roles", LuaHelper.getLuaValueFromList(roleIds));
