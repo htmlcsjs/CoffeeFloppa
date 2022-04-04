@@ -3,8 +3,10 @@ package net.htmlcsjs.coffeeFloppa.helpers;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.PartialMember;
+import discord4j.rest.util.Color;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
+import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONObject;
 
 import java.io.BufferedReader;
@@ -79,6 +81,15 @@ public class CommandUtil {
 
     public static String getStackTraceToString(Exception e) {
         return getStackTraceToString(e, e.getStackTrace().length);
+    }
+
+    @NotNull
+    public static String getHexValueFromColour(Color colour) {
+        StringBuilder rawValue = new StringBuilder(Integer.toHexString(colour.getRGB())).reverse();
+        if (rawValue.length() < 6) {
+            rawValue.append("0".repeat(6-rawValue.length()));
+        }
+        return rawValue.reverse().append("#").reverse().toString();
     }
 
 

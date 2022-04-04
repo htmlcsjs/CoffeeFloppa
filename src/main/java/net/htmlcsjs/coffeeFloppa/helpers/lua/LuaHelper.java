@@ -50,6 +50,7 @@ public class LuaHelper {
         user_globals.load(new JseMathLib());
         user_globals.load(new FloppaLuaLib(message));
         user_globals.load(new HTTPLib());
+        user_globals.load(new LuaBufferLib());
         user_globals.set("print", new PrintFunc());
         user_globals.set("maths", user_globals.get("math"));
 

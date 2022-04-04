@@ -3,24 +3,32 @@ package net.htmlcsjs.coffeeFloppa.helpers.lua;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.*;
+import discord4j.core.spec.MessageCreateFields;
+import discord4j.rest.util.Color;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
+import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.TwoArgFunction;
 import org.luaj.vm2.lib.ZeroArgFunction;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Optional;
 
 public class FloppaLuaLib extends TwoArgFunction {
     private final Message message;
     private final Guild guild;
+    private int msgCount;
+    public static final int MAX_SENT_MESSAGES = 5;
 
     public FloppaLuaLib(Message message) {
         this.message = message;
         this.guild = message.getGuild().block();
+        this.msgCount = 0;
     }
 
     @Override
@@ -30,6 +38,8 @@ public class FloppaLuaLib extends TwoArgFunction {
         floppaLib.set("msg", new getMessage().call(LuaValue.valueOf(message.getId().asString())));
         floppaLib.set("get_message", new getMessage());
         floppaLib.set("get_channel", new getChannel());
+        floppaLib.set("send_file", new sendFile());
+        floppaLib.set("get_user", new getUser());
 
         env.set("floppa", floppaLib);
         env.get("package").get("loaded").set("floppa", floppaLib);
@@ -84,7 +94,6 @@ public class FloppaLuaLib extends TwoArgFunction {
     }
 
     public class getChannel extends OneArgFunction {
-
         @Override
         public LuaValue call(LuaValue channelID) {
             try {
@@ -147,4 +156,65 @@ public class FloppaLuaLib extends TwoArgFunction {
             }
         }
     }
+
+    public class sendFile extends TwoArgFunction {
+        @Override
+        public LuaValue call(LuaValue filename, LuaValue buffer) {
+            if (!buffer.isuserdata() || !filename.isstring()) {
+                return error("Args are of invalid type. should be (string, userdata)");
+            }
+            if (msgCount > MAX_SENT_MESSAGES) {
+                return error("You have sent too many messages");
+            }
+            msgCount++;
+            byte[] userdata = (byte[]) buffer.checkuserdata();
+            message.getChannel().flatMap(channel -> channel.createMessage()
+                    .withFiles(MessageCreateFields.File.of(filename.checkjstring(), new ByteArrayInputStream(userdata))))
+                    .subscribe();
+            return NIL;
+        }
+    }
+
+    public class getUser extends OneArgFunction {
+        @Override
+        public LuaValue call(LuaValue userId) {
+            try {
+                if (guild == null) {
+                    FloppaLogger.logger.error("ERROR, Guild is null\n" + message);
+                    return error("The referenced guild is null\nThis might be a problem on the bots side");
+                }
+                Snowflake userSnowflake = Snowflake.of(userId.checkjstring());
+                Member member = guild.getMemberById(userSnowflake).block();
+                if (member == null) {
+                    return error("Couldn't find the member with the specified id.");
+                }
+                LuaValue memberData = tableOf();
+
+                member.getAccentColor().ifPresent(colour -> memberData.set("accent_colour", CommandUtil.getHexValueFromColour(colour)));
+                member.getBannerUrl().ifPresent(url -> memberData.set("banner_url", url));
+                Color colour = member.getColor().block();
+                if (colour != null) {
+                    memberData.set("colour", CommandUtil.getHexValueFromColour(colour));
+                }
+                memberData.set("discriminator", member.getDiscriminator());
+                memberData.set("display_name", member.getDisplayName());
+                memberData.set("effective_avatar_url", member.getEffectiveAvatarUrl());
+                List<String> flags = member.getPublicFlags().stream().map(Enum::name).toList();
+                memberData.set("flags", LuaHelper.getLuaValueFromList(flags));
+                memberData.set("hasAnimatedAvatar", valueOf(member.hasAnimatedAvatar()));
+                memberData.set("hasAnimatedBanner", valueOf(member.hasAnimatedBanner()));
+                memberData.set("isBot", valueOf(member.isBot()));
+                member.getNickname().ifPresent(nick -> memberData.set("nick", nick));
+                List<String> roleIds = member.getRoleIds().stream().map(Snowflake::asString).toList();
+                memberData.set("roles", LuaHelper.getLuaValueFromList(roleIds));
+                memberData.set("tag", member.getTag());
+                memberData.set("username", member.getUsername());
+
+                return memberData;
+            } catch (Exception e) {
+                return error(e.getMessage());
+            }
+        }
+    }
+
 }
