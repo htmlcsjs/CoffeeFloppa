@@ -1,5 +1,6 @@
 package net.htmlcsjs.coffeeFloppa.helpers.lua;
 
+import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
@@ -41,6 +42,9 @@ public class HTTPLib extends TwoArgFunction {
                 connection.setRequestMethod("GET");
                 returnInfo.set("status_code", connection.getResponseCode());
                 String body = new BufferedReader(new InputStreamReader(connection.getInputStream())).lines().collect(Collectors.joining("\n"));
+                if (body.contains(CoffeeFloppa.ip)) {
+                    body = body.replaceAll(CoffeeFloppa.ip, "127.0.0.1");
+                }
                 returnInfo.set("body", body);
                 Map<String, List<String>> headerMap = connection.getHeaderFields();
                 LuaTable headers = tableOf();

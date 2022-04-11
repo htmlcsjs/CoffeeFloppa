@@ -14,10 +14,11 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import reactor.core.publisher.Mono;
 
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.net.URI;
+import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CoffeeFloppa {
     public static Random randomGen;
@@ -25,6 +26,7 @@ public class CoffeeFloppa {
     public static char prefix;
     public static Map<String, String> adminRolesByGuild;
     public static Snowflake admin;
+    public static String ip;
     public static Map<String, Object> emoteData;
     public static String version = "@VERSION@";
     public static String gitRef = "@GIT_VER@";
@@ -45,6 +47,9 @@ public class CoffeeFloppa {
 
         // Get adminRolesByGuild;
         adminRolesByGuild = (Map<String, String>) jsonData.get("guilds");
+
+        URL ipGetURL = new URI("https://ifconfig.me/").toURL();
+        ip = new BufferedReader(new InputStreamReader(ipGetURL.openStream())).lines().collect(Collectors.joining("\n"));
 
         Mono<Void> login = client.withGateway((GatewayDiscordClient gateway) -> {
             // Login message
