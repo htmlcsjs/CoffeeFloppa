@@ -2,6 +2,7 @@ package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.rest.util.AllowedMentions;
 
 import java.util.*;
 
@@ -99,7 +100,8 @@ public class StoikCommand implements ICommand {
                         .addField("Balanced", clayStrBuilder.toString(), true)
                         .addField("Status", balancedMsg, false)
                         .build()
-        ).withMessageReference(message.getId())).subscribe();
+                ).withMessageReference(message.getId())
+                .withAllowedMentions(AllowedMentions.suppressEveryone())).subscribe();
         return null;
 
     }

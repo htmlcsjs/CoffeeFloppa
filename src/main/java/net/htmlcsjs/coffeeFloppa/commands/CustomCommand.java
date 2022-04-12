@@ -2,6 +2,7 @@ package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.MessageCreateFields;
+import discord4j.rest.util.AllowedMentions;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 
@@ -40,7 +41,8 @@ public class CustomCommand implements ICommand {
             }
             message.getChannel().flatMap(channel -> channel.createMessage(String.format("The responses for %s are:", name))
                     .withFiles(MessageCreateFields.File.of("msg.txt", new ByteArrayInputStream(formatted.toString().getBytes(StandardCharsets.UTF_8))))
-                    .withMessageReference(message.getId())).subscribe();
+                    .withMessageReference(message.getId())
+                    .withAllowedMentions(AllowedMentions.suppressEveryone())).subscribe();
             return null;
         } else {
             if (responses.size() > 1) {

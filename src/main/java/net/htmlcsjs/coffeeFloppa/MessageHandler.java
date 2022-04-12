@@ -6,7 +6,9 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.MessageCreateFields;
 import discord4j.discordjson.json.EmojiData;
+import discord4j.rest.util.AllowedMentions;
 import net.htmlcsjs.coffeeFloppa.commands.ICommand;
+import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
@@ -45,29 +47,40 @@ public class MessageHandler {
                 ICommand command = commands.get(commandCall);
 
                 // we do a little bit of executing
-                if (command != null) {
-                    message.getChannel().flatMap(MessageChannel::type).subscribe(); // set flop to writing
-                    String commandMessage = command.execute(message);
-                    if (commandMessage != null && commandMessage.length() <= 2000) {
-                        return message.getChannel().flatMap(channel -> channel.createMessage(commandMessage)
-                                .withMessageReference(message.getId()));
-                    } else if (commandMessage != null){
-                        return message.getChannel().flatMap(channel -> channel.createMessage("Message content too large for msg, falling to an attachment")
-                                .withFiles(MessageCreateFields.File.of("msg.txt", new ByteArrayInputStream(commandMessage.getBytes(StandardCharsets.UTF_8))))
-                                .withMessageReference(message.getId()));
-                    }
-                }
+                Mono<Object> builtMessage = sendMessage(message, command);
+                if (builtMessage != null) return builtMessage;
             }
         } catch (IndexOutOfBoundsException ignored) {}
+
         for (String key : searchCommands.keySet()) {
             String prefix = key.split(" ")[0];
             String terminator = key.split(" ")[1];
             if (msgContent.contains(prefix) && msgContent.contains(terminator) && msgContent.indexOf(prefix) < msgContent.indexOf(terminator) && !message.getAuthor().get().isBot() && !message.mentionsEveryone()) {
                 ICommand command = searchCommands.get(key);
-                return message.getChannel().flatMap(channel -> channel.createMessage(command.execute(message)));
+                Mono<Object> builtMessage = sendMessage(message, command);
+                if (builtMessage != null) return builtMessage;
             }
         }
         return Mono.empty();
+    }
+
+    @Nullable
+    private static Mono<Object> sendMessage(Message message, ICommand command) {
+        if (command != null) {
+            message.getChannel().flatMap(MessageChannel::type).subscribe(); // set flop to writing
+            String commandMessage = command.execute(message);
+            if (commandMessage != null && commandMessage.length() <= 2000) {
+                return message.getChannel().flatMap(channel -> channel.createMessage(commandMessage)
+                        .withMessageReference(message.getId())
+                        .withAllowedMentions(AllowedMentions.suppressEveryone()));
+            } else if (commandMessage != null){
+                return message.getChannel().flatMap(channel -> channel.createMessage("Message content too large for msg, falling to an attachment")
+                        .withFiles(MessageCreateFields.File.of("msg.txt", new ByteArrayInputStream(commandMessage.getBytes(StandardCharsets.UTF_8))))
+                        .withMessageReference(message.getId())
+                        .withAllowedMentions(AllowedMentions.suppressEveryone()));
+            }
+        }
+        return null;
     }
 
 
