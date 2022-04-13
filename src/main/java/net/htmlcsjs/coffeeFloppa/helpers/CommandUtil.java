@@ -7,11 +7,23 @@ import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 import org.json.simple.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("unchecked")
 public class CommandUtil {
+
+    // Pattern for recognizing a URL, based off RFC 3986, "taken" from https://stackoverflow.com/questions/5713558/
+    public static final Pattern urlPattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/|www\\.)(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)",
+            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL);
+
     public static boolean getAllowedToRun(Message message) {
         Set<Snowflake> userRoleIDs;
         try {
@@ -67,5 +79,24 @@ public class CommandUtil {
 
     public static String getStackTraceToString(Exception e) {
         return getStackTraceToString(e, e.getStackTrace().length);
+    }
+
+
+    public static String getAttachment(Message message) throws IOException, IllegalArgumentException {
+        URL url;
+        if (message.getAttachments().size() > 0) {
+            url = new URL(message.getAttachments().get(0).getUrl());
+        } else {
+            Matcher urlMatcher = urlPattern.matcher(message.getContent());
+            String urlStr = "";
+            while (urlMatcher.find()) {
+                urlStr = message.getContent().substring(urlMatcher.start(), urlMatcher.end());
+            }
+            if (urlStr.equals("")) {
+                throw new IllegalArgumentException("Could not find URL in message contents");
+            }
+            url = new URL(urlStr);
+        }
+        return new BufferedReader(new InputStreamReader(url.openStream())).lines().collect(Collectors.joining("\n"));
     }
 }

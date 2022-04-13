@@ -73,7 +73,7 @@ public class FloppaLuaLib extends TwoArgFunction {
             LuaValue messageData = tableOf();
             messageCurrent.getAuthor().ifPresent(author -> messageData.set("author", author.getId().asString()));
             messageData.set("id", messageCurrent.getId().asString());
-            messageData.set("content", messageCurrent.getContent());
+            messageData.set("contents", messageCurrent.getContent());
             messageData.set("channel", messageCurrent.getChannelId().asString());
             List<String> attachmentList = messageCurrent.getAttachments().stream().map(Attachment::getUrl).toList();
             if (!attachmentList.isEmpty()) {

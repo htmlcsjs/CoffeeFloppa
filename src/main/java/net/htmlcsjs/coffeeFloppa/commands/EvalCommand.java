@@ -14,8 +14,13 @@ public class EvalCommand implements ICommand{
 
     @Override
     public String execute(Message message) {
-        String code = message.getContent().substring(getName().length() + 1);
-        code = code.replace("`", "");
+        String code = "";
+        try {
+            code = CommandUtil.getAttachment(message);
+        } catch (Exception ignored) {
+            code = message.getContent().substring(getName().length() + 1);
+            code = code.replace("`", "");
+        }
 
         try {
             Varargs returnValue = LuaHelper.runScriptInSandbox(code, message);
@@ -42,7 +47,7 @@ public class EvalCommand implements ICommand{
 
             return msgStr.toString();
         } catch (Exception e) {
-            return "An error occurred:```java\n" + e.getMessage() + "\n" + CommandUtil.getStackTraceToString(e, 20) + "```";
+            return "An error occurred:```java\n" + e.getMessage() + "\n" + CommandUtil.getStackTraceToString(e, 0) + "```";
         }
     }
 }

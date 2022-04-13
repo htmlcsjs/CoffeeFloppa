@@ -6,15 +6,12 @@ import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import org.json.simple.JSONObject;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@SuppressWarnings("unchecked")
 public class QuestAdminCommand implements ICommand{
     @Override
     public String getName() {
@@ -42,9 +39,16 @@ public class QuestAdminCommand implements ICommand{
                 if (questBook.equalsIgnoreCase("")) {
                     return "No Questbook name supplied";
                 }
-                String attachmentReturnStr = getAttachment(message, questBook, urlStr);
-                if (attachmentReturnStr != null)
-                    return attachmentReturnStr;
+                try {
+                    String attachmentReturnStr = CommandUtil.getAttachment(message);
+                    File outFile = new File("qb/" + questBook + ".json");
+                    outFile.createNewFile();
+                    FileOutputStream fileOutputStream = new FileOutputStream("qb/" + questBook + ".json");
+                    fileOutputStream.write(attachmentReturnStr.getBytes());
+                    fileOutputStream.close();
+                } catch (Exception e) {
+                    return "```" + e.getMessage() + "```";
+                }
 
                 qbList.add(questBook);
                 jsonData.put("quest_books", qbList);
@@ -64,10 +68,16 @@ public class QuestAdminCommand implements ICommand{
                 if (questBook.equalsIgnoreCase("")) {
                     return "No Questbook name supplied";
                 }
-                String attachmentReturnStr = getAttachment(message, questBook, urlStr);
-                if (attachmentReturnStr != null)
-                    return attachmentReturnStr;
-
+                try {
+                    String attachmentReturnStr = CommandUtil.getAttachment(message);
+                    File outFile = new File("qb/" + questBook + ".json");
+                    outFile.createNewFile();
+                    FileOutputStream fileOutputStream = new FileOutputStream("qb/" + questBook + ".json");
+                    fileOutputStream.write(attachmentReturnStr.getBytes());
+                    fileOutputStream.close();
+                } catch (Exception e) {
+                    return "```" + e.getMessage() + "```";
+                }
                 CoffeeFloppa.refreshConfig();
                 FloppaLogger.logger.info(String.format("Updated Questbook %s", questBook));
                 return String.format("Updated Questbook %s", questBook);
@@ -109,33 +119,4 @@ public class QuestAdminCommand implements ICommand{
                  - delete: deletes a questbook""";
     }
 
-    private String getAttachment(Message message, String questBook, String urlStr) {
-        if (message.getAttachments().size() > 0) {
-            try {
-                URL url = new URL(message.getAttachments().get(0).getUrl());
-                ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
-                File outFile = new File("qb/" + questBook + ".json");
-                outFile.createNewFile();
-                FileOutputStream fileOutputStream = new FileOutputStream("qb/" + questBook + ".json");
-                fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-                fileOutputStream.close();
-            } catch (Exception e) {
-                return "An error occurred:```java\n" + e.getMessage() + "\n" + CommandUtil.getStackTraceToString(e) + "```";
-            }
-        } else {
-            try {
-                URL url = new URL(urlStr);
-                ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
-                File outFile = new File("qb/" + questBook + ".json");
-                outFile.createNewFile();
-                FileOutputStream fileOutputStream = new FileOutputStream("qb/" + questBook + ".json");
-                fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-                fileOutputStream.close();
-            } catch (Exception e) {
-
-                return "An error occurred:```java\n" + e.getMessage() + "\n" + CommandUtil.getStackTraceToString(e) + "```";
-            }
-        }
-        return null;
-    }
 }
