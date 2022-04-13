@@ -83,6 +83,24 @@ public class CommandUtil {
         return getStackTraceToString(e, e.getStackTrace().length);
     }
 
+    public static String getAttachment(Message message) throws IOException, IllegalArgumentException {
+        URL url;
+        if (message.getAttachments().size() > 0) {
+            url = new URL(message.getAttachments().get(0).getUrl());
+        } else {
+            Matcher urlMatcher = urlPattern.matcher(message.getContent());
+            String urlStr = "";
+            while (urlMatcher.find()) {
+                urlStr = message.getContent().substring(urlMatcher.start(), urlMatcher.end());
+            }
+            if (urlStr.equals("")) {
+                throw new IllegalArgumentException("Could not find URL in message contents");
+            }
+            url = new URL(urlStr);
+        }
+        return new BufferedReader(new InputStreamReader(url.openStream())).lines().collect(Collectors.joining("\n"));
+    }
+
     @NotNull
     public static String getHexValueFromColour(Color colour) {
         StringBuilder rawValue = new StringBuilder(Integer.toHexString(colour.getRGB())).reverse();
