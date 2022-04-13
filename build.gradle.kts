@@ -62,6 +62,8 @@ tasks {
         useJUnitPlatform()
     }
     compileJava {
+        sourceCompatibility = JavaVersion.VERSION_17.majorVersion
+        targetCompatibility = JavaVersion.VERSION_17.majorVersion
         dependsOn("generateSource")
         setSource("$buildDir/sources/src/main")
     }
