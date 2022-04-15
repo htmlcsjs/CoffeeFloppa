@@ -5,6 +5,7 @@ import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import net.htmlcsjs.coffeeFloppa.commands.*;
@@ -18,6 +19,8 @@ import java.io.*;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class CoffeeFloppa {
@@ -28,6 +31,7 @@ public class CoffeeFloppa {
     public static Snowflake admin;
     public static String ip;
     public static Map<String, Object> emoteData;
+    public static String deletionEmote = "\uD83D\uDDD1️";
     public static String version = "@VERSION@";
     public static String gitRef = "@GIT_VER@";
 
@@ -66,8 +70,26 @@ public class CoffeeFloppa {
                 return MessageHandler.normal(message);
             }).doOnError(System.out::println).then();
 
+            Mono<Void> handleReaction = gateway.on(ReactionAddEvent.class, event -> {
+                Message message = event.getMessage().block();
+                if (message == null || !message.getAuthor().equals(gateway.getSelf().blockOptional())) {
+                    return Mono.empty();
+                }
+                AtomicReference<String> emojiValue = new AtomicReference<>("");
+                AtomicBoolean yeet = new AtomicBoolean(false);
+
+                event.getEmoji().asUnicodeEmoji().ifPresent(emoteUnicode -> emojiValue.set(emoteUnicode.getRaw()));
+                if (emojiValue.get().equals(deletionEmote)) {
+                    message.getReferencedMessage().ifPresent(referencedMessage -> yeet.set(referencedMessage.getAuthor().equals(event.getMember())));
+                    if (yeet.get()) {
+                        return message.delete();
+                    }
+                }
+                return Mono.empty();
+            }).doOnError(System.out::println).then();
+
             // we do a little combining
-            return printOnLogin.and(handleCommand).doOnError(System.out::println);
+            return printOnLogin.and(handleCommand).and(handleReaction).doOnError(System.out::println);
         });
 
         login.block();
