@@ -108,14 +108,14 @@ public class LuaHelper {
             if (value.istable()) {
                 if (!hitTables.contains(value.checktable())) {
                     hitTables.add(value.checktable());
-                    tableStrBuilder.append(": ").append(luaTableToString(value.checktable(), tabLevel + tabSize)).append(",").append("\n");
+                    tableStrBuilder.append(": ").append(luaTableToString(value.checktable(), tabLevel + tabSize)).append(",\n");
                 } else {
-                    return "<recursive table>";
+                    tableStrBuilder.append(": ").append("<recursive table>").append(",\n");
                 }
             } else if (value.isstring()){
                 tableStrBuilder.append(": \"").append(value).append("\",").append("\n");
             } else {
-                tableStrBuilder.append(": ").append(value).append(",").append("\n");
+                tableStrBuilder.append(": ").append(value).append(",\n");
             }
 
         }

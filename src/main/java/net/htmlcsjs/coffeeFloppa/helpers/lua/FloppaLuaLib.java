@@ -38,6 +38,10 @@ public class FloppaLuaLib extends TwoArgFunction {
         floppaLib.set("get_user", new getUser());
         floppaLib.set("get_role", new getRole());
 
+        // handles some other stuff added to other packages
+        // mega cursed
+        env.get("package").get("loaded").get("table").set("to_string", new tableToString());
+
         env.set("floppa", floppaLib);
         env.get("package").get("loaded").set("floppa", floppaLib);
         return floppaLib;
@@ -235,6 +239,16 @@ public class FloppaLuaLib extends TwoArgFunction {
             } catch (Exception e) {
                 return error(e.getMessage());
             }
+        }
+    }
+
+    public static class tableToString extends OneArgFunction {
+        @Override
+        public LuaValue call(LuaValue table) {
+            if (!table.istable()) {
+                return error("argument isn't a table.");
+            }
+            return valueOf(LuaHelper.startLuaTableToStr(table.checktable()));
         }
     }
 }
