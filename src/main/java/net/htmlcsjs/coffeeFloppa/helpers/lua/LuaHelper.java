@@ -110,7 +110,7 @@ public class LuaHelper {
                     hitTables.add(value.checktable());
                     tableStrBuilder.append(": ").append(luaTableToString(value.checktable(), tabLevel + tabSize)).append(",").append("\n");
                 } else {
-                    return "<recursive table acquired>";
+                    return "<recursive table>";
                 }
             } else if (value.isstring()){
                 tableStrBuilder.append(": \"").append(value).append("\",").append("\n");
