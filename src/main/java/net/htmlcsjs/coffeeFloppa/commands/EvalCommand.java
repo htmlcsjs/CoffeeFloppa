@@ -24,6 +24,9 @@ public class EvalCommand implements ICommand{
             code = message.getContent().substring(getName().length() + 1);
             code = code.replace("`", "");
         }
+        if (code.lastIndexOf("\n") == code.indexOf("\n") && !code.matches(".*print\\(\".*\"\\).*") && !code.contains("return")) {
+            code = "return " + code;
+        }
 
         try {
             Varargs returnValue = LuaHelper.runScriptInSandbox(code, message);
@@ -36,7 +39,12 @@ public class EvalCommand implements ICommand{
             if (returnValue.checkboolean(1)) {
                 LuaValue returnedData = returnValue.arg(2);
                 if (returnedData.istable()) {
-                    msgStr.append("```lua\n").append(LuaHelper.startLuaTableToStr(returnedData.checktable())).append("```\n");
+                    String tableToStr = LuaHelper.startLuaTableToStr(returnedData.checktable());
+                    if (tableToStr.length() < 1750) {
+                        msgStr.append("```lua\n").append(tableToStr).append("```\n");
+                    } else {
+                        msgStr.append(tableToStr).append("\n");
+                    }
                 } else if (returnedData.isnil() && !isPrintEmpty) {
                     //pass
                 } else {
