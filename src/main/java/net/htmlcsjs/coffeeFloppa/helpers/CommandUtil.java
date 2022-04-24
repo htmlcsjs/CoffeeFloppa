@@ -46,26 +46,6 @@ public class CommandUtil {
         return false;
     }
 
-    public static JSONObject getMessageJson(Message message) {
-        JSONObject messageData = new JSONObject();
-        messageData.put("content", message.getContent());
-        messageData.put("id", message.getId().asString());
-        messageData.put("author", message.getAuthor().get().getId().asString());
-        messageData.put("channel", message.getChannelId().asString());
-        List<PartialMember> memberMentions = message.getMemberMentions();
-        if (memberMentions.isEmpty()) {
-            messageData.put("user_to_use", message.getAuthor().get().getId().asString());
-            for (String str: message.getContent().split(" ")) {
-                try {
-                    messageData.put("user_to_use", Snowflake.of(str).asString());
-                } catch (NumberFormatException ignored) {}
-            }
-        } else {
-            messageData.put("user_to_use", memberMentions.get(0).getId().asString());
-        }
-        return messageData;
-    }
-
     public static String getStackTraceToString(Exception e, int limit) {
         StringBuilder stackTrace = new StringBuilder();
         int i = 0;

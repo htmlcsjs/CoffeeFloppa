@@ -7,12 +7,17 @@ import discord4j.core.object.entity.channel.*;
 import discord4j.rest.util.Color;
 import discord4j.rest.util.Image;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
+import net.htmlcsjs.coffeeFloppa.MessageHandler;
+import net.htmlcsjs.coffeeFloppa.commands.CustomCommand;
+import net.htmlcsjs.coffeeFloppa.commands.ICommand;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.TwoArgFunction;
 import org.luaj.vm2.lib.ZeroArgFunction;
+import reactor.core.publisher.Mono;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,6 +42,7 @@ public class FloppaLuaLib extends TwoArgFunction {
         floppaLib.set("get_channel", new getChannel());
         floppaLib.set("get_user", new getUser());
         floppaLib.set("get_role", new getRole());
+        floppaLib.set("send_message", new sendMessage());
 
         // handles some other stuff added to other packages
         // mega cursed
@@ -45,6 +51,10 @@ public class FloppaLuaLib extends TwoArgFunction {
         env.set("floppa", floppaLib);
         env.get("package").get("loaded").set("floppa", floppaLib);
         return floppaLib;
+    }
+
+    public int getMsgCount() {
+        return msgCount;
     }
 
     static public class Susso extends ZeroArgFunction {
@@ -249,6 +259,29 @@ public class FloppaLuaLib extends TwoArgFunction {
                 return error("argument isn't a table.");
             }
             return valueOf(LuaHelper.startLuaTableToStr(table.checktable()));
+        }
+    }
+
+    public class sendMessage extends OneArgFunction {
+        @Override
+        public LuaValue call(LuaValue messageData) {
+            msgCount++;
+            if (msgCount > MAX_SENT_MESSAGES) {
+                return FALSE;
+            }
+            if (messageData.isstring()) {
+                ICommand funnyCommand = new CustomCommand("how are you here", Collections.singletonList(messageData.checkjstring()));
+                Mono<Object> messageSendMono = MessageHandler.sendMessage(message, funnyCommand, msgCount == 1);
+                if (messageSendMono == null) {
+                    FloppaLogger.logger.error(String.format("message \"%s\" has caused %s to be null", messageData.checkjstring(), funnyCommand));
+                    return error("Internal error");
+                } else messageSendMono.block();
+                return TRUE;
+            } else if (messageData.istable()) {
+                // todo
+                return TRUE;
+            }
+            return error("Message string nor table with message information supplied");
         }
     }
 }

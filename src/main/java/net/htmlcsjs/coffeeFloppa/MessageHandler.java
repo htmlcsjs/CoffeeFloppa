@@ -5,6 +5,7 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.MessageCreateFields;
+import discord4j.core.spec.MessageCreateMono;
 import discord4j.discordjson.json.EmojiData;
 import discord4j.rest.util.AllowedMentions;
 import net.htmlcsjs.coffeeFloppa.commands.ICommand;
@@ -65,22 +66,36 @@ public class MessageHandler {
     }
 
     @Nullable
-    private static Mono<Object> sendMessage(Message message, ICommand command) {
+    public static Mono<Object> sendMessage(Message message, ICommand command, boolean withReference) {
         if (command != null) {
             message.getChannel().flatMap(MessageChannel::type).subscribe(); // set flop to writing
             String commandMessage = command.execute(message);
             if (commandMessage != null && commandMessage.length() <= 2000) {
-                return message.getChannel().flatMap(channel -> channel.createMessage(commandMessage)
-                        .withMessageReference(message.getId())
-                        .withAllowedMentions(AllowedMentions.suppressEveryone()));
+                return message.getChannel().flatMap(channel -> {
+                    MessageCreateMono msg = channel.createMessage(commandMessage)
+                            .withAllowedMentions(AllowedMentions.suppressEveryone());
+                    if (withReference) {
+                        msg = msg.withMessageReference(message.getId());
+                    }
+                    return msg;
+                });
             } else if (commandMessage != null){
-                return message.getChannel().flatMap(channel -> channel.createMessage("Message content too large for msg, falling to an attachment")
-                        .withFiles(MessageCreateFields.File.of("msg.txt", new ByteArrayInputStream(commandMessage.getBytes(StandardCharsets.UTF_8))))
-                        .withMessageReference(message.getId())
-                        .withAllowedMentions(AllowedMentions.suppressEveryone()));
+                return message.getChannel().flatMap(channel -> {
+                    MessageCreateMono msg = channel.createMessage("Message content too large for msg, falling to an attachment")
+                            .withFiles(MessageCreateFields.File.of("msg.txt", new ByteArrayInputStream(commandMessage.getBytes(StandardCharsets.UTF_8))))
+                            .withAllowedMentions(AllowedMentions.suppressEveryone());
+                    if (withReference) {
+                        msg = msg.withMessageReference(message.getId());
+                    }
+                    return msg;
+                });
             }
         }
         return Mono.empty();
+    }
+
+    public static Mono<Object> sendMessage(Message message, ICommand command) {
+        return sendMessage(message, command, true);
     }
 
 

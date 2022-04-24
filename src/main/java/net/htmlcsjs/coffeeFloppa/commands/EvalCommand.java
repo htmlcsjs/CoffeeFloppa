@@ -33,6 +33,7 @@ public class EvalCommand implements ICommand{
 
             StringBuilder msgStr = new StringBuilder();
             boolean isPrintEmpty = LuaHelper.getPrintBufferContents().isEmpty();
+            boolean auxMessagesSent = LuaHelper.getMessagesSentForExecution() > 0;
             if (!isPrintEmpty) {
                 msgStr.append(LuaHelper.getPrintBufferContents()).append("\n");
             }
@@ -45,7 +46,7 @@ public class EvalCommand implements ICommand{
                     } else {
                         msgStr.append(tableToStr).append("\n");
                     }
-                } else if (returnedData.isnil() && !isPrintEmpty) {
+                } else if (returnedData.isnil() && (!isPrintEmpty || auxMessagesSent)) {
                     //pass
                 } else {
                     msgStr.append(returnedData).append("\n");
@@ -56,7 +57,7 @@ public class EvalCommand implements ICommand{
                         .append(returnValue.arg(2)).append("```");
             }
 
-            return msgStr.toString();
+            return msgStr.isEmpty() ? null : msgStr.toString();
         } catch (Exception e) {
             return "An error occurred:```java\n" + e.getMessage() + "\n" + CommandUtil.getStackTraceToString(e, 0) + "```";
         }
