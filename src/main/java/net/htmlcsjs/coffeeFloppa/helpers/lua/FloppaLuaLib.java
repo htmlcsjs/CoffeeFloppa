@@ -4,6 +4,9 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.RoleTags;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
+import discord4j.core.spec.MessageCreateFields;
+import discord4j.core.spec.MessageCreateMono;
+import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Color;
 import discord4j.rest.util.Image;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
@@ -11,12 +14,17 @@ import net.htmlcsjs.coffeeFloppa.MessageHandler;
 import net.htmlcsjs.coffeeFloppa.commands.CustomCommand;
 import net.htmlcsjs.coffeeFloppa.commands.ICommand;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
+import org.luaj.vm2.LuaError;
+import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.TwoArgFunction;
 import org.luaj.vm2.lib.ZeroArgFunction;
 import reactor.core.publisher.Mono;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -275,10 +283,37 @@ public class FloppaLuaLib extends TwoArgFunction {
                 if (messageSendMono == null) {
                     FloppaLogger.logger.error(String.format("message \"%s\" has caused %s to be null", messageData.checkjstring(), funnyCommand));
                     return error("Internal error");
-                } else messageSendMono.block();
+                } else messageSendMono.subscribe();
                 return TRUE;
             } else if (messageData.istable()) {
-                // todo
+                LuaTable messageTable = messageData.checktable();
+                message.getChannel().flatMap(channel -> {
+                    MessageCreateMono msg = channel.createMessage(messageTable.get("content").optjstring(""))
+                            .withAllowedMentions(AllowedMentions.suppressEveryone());
+                    if (msgCount == 1) {
+                        msg = msg.withMessageReference(message.getId());
+                    }
+                    LuaValue fileTable = NIL;
+                    try {
+                        fileTable = messageTable.get("file").isnil() || !messageTable.get("file").istable() ? NIL : messageTable.get("file");
+                    } catch (Exception ignored) {}
+
+                    if (fileTable != NIL || !fileTable.get("data").isnil()) {
+                        if (fileTable.get("name") == NIL || !fileTable.get("name").isstring()) {
+                            fileTable.set("name", "unknown.txt");
+                        }
+                        LuaValue fileRaw = fileTable.get("data");
+                        InputStream fileIStream;
+                        if (fileRaw.isuserdata()) {
+                            fileIStream = new ByteArrayInputStream((byte[]) fileRaw.checkuserdata());
+                        } else {
+                            fileIStream = new ByteArrayInputStream(fileRaw.checkjstring().getBytes(StandardCharsets.UTF_8));
+                        }
+                        msg = msg.withFiles(MessageCreateFields.File.of(fileTable.get("name").checkjstring(), fileIStream));
+                    }
+
+                    return msg;
+                }).subscribe();
                 return TRUE;
             }
             return error("Message string nor table with message information supplied");
