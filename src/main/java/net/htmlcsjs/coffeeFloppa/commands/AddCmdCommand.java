@@ -4,8 +4,10 @@ import discord4j.core.object.entity.Message;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
+import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -14,10 +16,11 @@ import java.util.Map;
 
 public class AddCmdCommand implements ICommand {
     @Override
-    public String getName() {
+    public @NotNull String getName() {
         return "addCommand";
     }
 
+    @Nullable
     @Override
     public String execute(Message message) {
         if (CommandUtil.getAllowedToRun(message)) {

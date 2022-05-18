@@ -3,6 +3,8 @@ package net.htmlcsjs.coffeeFloppa.commands;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -11,7 +13,7 @@ public class VersionCommand implements ICommand {
      * @return The name/handle of the command
      */
     @Override
-    public String getName() {
+    public @NotNull String getName() {
         return "version";
     }
 
@@ -21,6 +23,7 @@ public class VersionCommand implements ICommand {
      * @param message The Message to respond to
      * @return the String to be sent to the user
      */
+    @Nullable
     @Override
     public String execute(Message message) {
         Snowflake guildId = message.getGuildId().isPresent() ? message.getGuildId().get() : Snowflake.of("701354865217110096");

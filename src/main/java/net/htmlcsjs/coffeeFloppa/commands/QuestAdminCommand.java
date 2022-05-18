@@ -4,7 +4,9 @@ import discord4j.core.object.entity.Message;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
+import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONObject;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -14,10 +16,11 @@ import java.util.List;
 @SuppressWarnings("unchecked")
 public class QuestAdminCommand implements ICommand{
     @Override
-    public String getName() {
+    public @NotNull String getName() {
         return "bq_admin";
     }
 
+    @Nullable
     @Override
     public String execute(Message message) {
         String questBook = "", verb = "", urlStr = "";

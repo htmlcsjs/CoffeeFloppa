@@ -3,15 +3,18 @@ package net.htmlcsjs.coffeeFloppa.commands;
 import discord4j.core.object.entity.Message;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import net.htmlcsjs.coffeeFloppa.helpers.lua.LuaHelper;
+import org.jetbrains.annotations.NotNull;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
+import org.jetbrains.annotations.Nullable;
 
 public class EvalCommand implements ICommand{
     @Override
-    public String getName() {
+    public @NotNull String getName() {
         return "eval";
     }
 
+    @Nullable
     @Override
     public String execute(Message message) {
         String code = "";

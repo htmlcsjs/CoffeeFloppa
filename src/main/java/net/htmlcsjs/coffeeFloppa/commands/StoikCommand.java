@@ -3,15 +3,18 @@ package net.htmlcsjs.coffeeFloppa.commands;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.AllowedMentions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
 public class StoikCommand implements ICommand {
     @Override
-    public String getName() {
+    public @NotNull String getName() {
         return "stoik";
     }
 
+    @Nullable
     @Override
     public String execute(Message message) {
         String formulaStr = "";

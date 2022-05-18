@@ -3,8 +3,10 @@ package net.htmlcsjs.coffeeFloppa.commands;
 import discord4j.core.object.entity.Message;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
+import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -12,10 +14,11 @@ import java.util.Map;
 
 public class RemoveCmdCommand implements ICommand {
     @Override
-    public String getName() {
+    public @NotNull String getName() {
         return "removeCommand";
     }
 
+    @Nullable
     @Override
     public String execute(Message message) {
         if (CommandUtil.getAllowedToRun(message)) {

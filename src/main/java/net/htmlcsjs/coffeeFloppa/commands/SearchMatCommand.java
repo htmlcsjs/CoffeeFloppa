@@ -2,17 +2,21 @@ package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.core.object.entity.Message;
 import net.htmlcsjs.coffeeFloppa.helpers.MaterialCommandsHelper;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.simple.JSONArray;
+
 
 import java.util.Map;
 
 public class SearchMatCommand implements ICommand {
 
     @Override
-    public String getName() {
+    public @NotNull String getName() {
         return "material";
     }
 
+    @Nullable
     @Override
     public String execute(Message message) {
         String materialName = message.getContent().split(" ")[1].toLowerCase();

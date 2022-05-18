@@ -5,6 +5,8 @@ import discord4j.core.spec.MessageCreateFields;
 import discord4j.rest.util.AllowedMentions;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -22,10 +24,11 @@ public class CustomCommand implements ICommand {
     }
 
     @Override
-    public String getName() {
+    public @NotNull String getName() {
         return this.name;
     }
 
+    @Nullable
     @Override
     public String execute(Message message) {
         int index = 0;

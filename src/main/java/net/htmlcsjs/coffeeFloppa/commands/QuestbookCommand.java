@@ -4,6 +4,8 @@ import discord4j.core.object.entity.Message;
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 import net.htmlcsjs.coffeeFloppa.helpers.QuestDefinition;
 import net.htmlcsjs.coffeeFloppa.helpers.Questbook;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.regex.Matcher;
@@ -19,10 +21,11 @@ public class QuestbookCommand implements ICommand {
     }
 
     @Override
-    public String getName() {
+    public @NotNull String getName() {
         return qbName + "_quests";
     }
 
+    @Nullable
     @Override
     public String execute(Message message) {
         String[] splitArg = message.getContent().split(" ");

@@ -1,15 +1,18 @@
 package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.core.object.entity.Message;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
 public class AddonCommand implements ICommand{
     @Override
-    public String getName() {
+    public @NotNull String getName() {
         return "addons";
     }
 
+    @Nullable
     @Override
     public String execute(Message message) {
         String addon;
