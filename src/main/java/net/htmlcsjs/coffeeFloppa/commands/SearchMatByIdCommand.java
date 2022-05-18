@@ -1,6 +1,7 @@
 package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.core.object.entity.Message;
+import discord4j.rest.util.AllowedMentions;
 import net.htmlcsjs.coffeeFloppa.helpers.MaterialCommandsHelper;
 import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONArray;
@@ -22,7 +23,11 @@ public class SearchMatByIdCommand implements ICommand {
         for (Object obj: materialList) {
             Map<String, Object> materialMap = (Map<String, Object>) obj;
             if ((long) materialMap.get("id") == (materialID)) {
-                return MaterialCommandsHelper.parseMaterial(materialMap);
+                message.getChannel().flatMap(channel -> channel.createMessage()
+                        .withEmbeds(MaterialCommandsHelper.parseMaterialEmbed(materialMap))
+                        .withMessageReference(message.getId())
+                        .withAllowedMentions(AllowedMentions.suppressEveryone())).subscribe();
+                return null;
             }
         }
         return String.format("Sorry, the material with the id %d was not found.", materialID);
