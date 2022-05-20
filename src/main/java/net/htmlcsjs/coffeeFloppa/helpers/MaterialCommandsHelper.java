@@ -1,15 +1,16 @@
 package net.htmlcsjs.coffeeFloppa.helpers;
 
-import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.discordjson.possible.Possible;
 import discord4j.rest.util.Color;
-import net.htmlcsjs.coffeeFloppa.commands.StoikCommand;
+import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,43 +18,44 @@ import java.util.Map;
 public class MaterialCommandsHelper {
 
     public static JSONObject materialData;
+    public static Map<String, String> materialLang = new HashMap<>();
 
-    @Deprecated
-    public static String parseMaterial(Map<String, Object> materialMap) {
-        StringBuilder returnMsg = new StringBuilder();
-        returnMsg.append(String.format("Name: `%s`\n", ((String) materialMap.get("unlocalized_name")).split("\\.")[1]));
-        returnMsg.append(String.format("Colour: `#%x`\n", (long) materialMap.get("colour")));
-        returnMsg.append(String.format("ID: `%d`\n", (long) materialMap.get("id")));
-        returnMsg.append(String.format("Mass: `%d`\n", (long) materialMap.get("mass")));
-        returnMsg.append(String.format("Icon Set: `%s`\n", materialMap.get("icon_set")));
-        Map<String, Object> propertiesMap = (Map<String, Object>) materialMap.get("properties");
-        for (String propertyName: propertiesMap.keySet()) {
-            returnMsg.append(propertyName.substring(0, 1).toUpperCase())
-                    .append(String.join(" ", propertyName.substring(1).split("_"))).append(": `")
-                    .append(propertiesMap.get(propertyName).toString())
-                    .append("`\n");
-        }
-        List<Map<String, Object>> componentsList = (List<Map<String, Object>>) materialMap.get("components");
-        returnMsg.append("Formula: `").append(materialMap.get("formula")).append("`\n");
-        if (!componentsList.isEmpty()) {
-            returnMsg.append("\nComposed of: ```java\n");
-            for (Map<String, Object> component: componentsList) {
-                returnMsg.append(" - ")
-                        .append(component.get("amount"))
-                        .append(" * ")
-                        .append(((String) component.get("name")).split("\\.")[1])
-                        .append("\n");
+    public static void loadMaterials(BufferedReader reader) throws IOException {
+        String line = "mog=sus";
+        FloppaLogger.logger.info("Starting to load lang");
+        while (line != null) {
+            if (line.isBlank() || line.charAt(0) == '#') {
+                line = reader.readLine();
+                continue;
             }
-            returnMsg.append("```");
+
+            int separatorIndex = line.indexOf("=");
+            if (separatorIndex == -1) {
+                FloppaLogger.logger.warn(String.format("Line %s is malformed", line));
+            } else {
+                materialLang.put(line.substring(0, separatorIndex), line.substring(separatorIndex+1));
+            }
+
+            line = reader.readLine();
         }
-        return returnMsg.toString();
+        FloppaLogger.logger.info(materialLang.get("Lang Loaded"));
     }
 
     public static List<EmbedCreateSpec> parseMaterialEmbed(Map<String, Object> materialInfo) {
         List<EmbedCreateSpec> returnList = new ArrayList<>();
-        String name = ((String) materialInfo.get("unlocalized_name")).split("\\.")[1];
+
+        String key = (String) materialInfo.get("unlocalized_name");
+        String name;
+
+        if (materialLang.containsKey(key)) {
+            name = materialLang.get(key);
+        } else {
+            String keyBody = key.split("\\.")[1];
+            name = keyBody.substring(0, 1).toUpperCase() + keyBody.substring(1);
+        }
+
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder().color(Color.of(((Long) materialInfo.getOrDefault("colour", 0x36393f)).intValue()))
-                .title(name.substring(0, 1).toUpperCase() + name.substring(1))
+                .title(name)
                 .author(String.format("ID: %d", (long) materialInfo.get("id")), null, "https://cdn.discordapp.com/emojis/924907233618329640.png")
                 .addField("Mass", String.valueOf(materialInfo.get("mass")), true)
                 .addField("Icon Set", (String) materialInfo.get("icon_set"), true)

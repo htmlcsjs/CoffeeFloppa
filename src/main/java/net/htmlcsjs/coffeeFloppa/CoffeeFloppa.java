@@ -9,6 +9,8 @@ import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import net.htmlcsjs.coffeeFloppa.commands.*;
+import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
+import net.htmlcsjs.coffeeFloppa.helpers.MaterialCommandsHelper;
 import net.htmlcsjs.coffeeFloppa.helpers.lua.LuaHelper;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -17,6 +19,7 @@ import reactor.core.publisher.Mono;
 
 import java.io.*;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,7 +40,7 @@ public class CoffeeFloppa {
 
     private static JSONObject jsonData;
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws URISyntaxException, IOException {
         // Init stuff
         FloppaLogger.init();
         refreshConfig();
@@ -51,6 +54,13 @@ public class CoffeeFloppa {
 
         // Get adminRolesByGuild;
         adminRolesByGuild = (Map<String, String>) jsonData.get("guilds");
+
+        // Load lang for materials
+        try (FileReader reader = new FileReader("materials.lang")) {
+            MaterialCommandsHelper.loadMaterials(new BufferedReader((reader)));
+        } catch (Exception e) {
+            FloppaLogger.logger.error(CommandUtil.getStackTraceToString(e));
+        }
 
         URL ipGetURL = new URI("https://ifconfig.me/").toURL();
         ip = new BufferedReader(new InputStreamReader(ipGetURL.openStream())).lines().collect(Collectors.joining("\n"));
