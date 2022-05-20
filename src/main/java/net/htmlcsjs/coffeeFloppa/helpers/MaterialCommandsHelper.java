@@ -59,7 +59,7 @@ public class MaterialCommandsHelper {
                 .addField("Icon Set", (String) materialInfo.get("icon_set"), true)
                 .addField("Colour", String.format("#%x", (long) materialInfo.get("colour")), true);
 
-        if (materialInfo.get("formula") != null) {
+        if (!((String) materialInfo.getOrDefault("formula", "")).isBlank()) {
             builder.addField("Formula", (String) materialInfo.get("formula"), true);
         }
 
