@@ -4,6 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.RoleTags;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
+import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateFields;
 import discord4j.core.spec.MessageCreateMono;
 import discord4j.rest.util.AllowedMentions;
@@ -14,7 +15,6 @@ import net.htmlcsjs.coffeeFloppa.MessageHandler;
 import net.htmlcsjs.coffeeFloppa.commands.CustomCommand;
 import net.htmlcsjs.coffeeFloppa.commands.ICommand;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
-import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.OneArgFunction;
@@ -25,6 +25,7 @@ import reactor.core.publisher.Mono;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -310,6 +311,67 @@ public class FloppaLuaLib extends TwoArgFunction {
                             fileIStream = new ByteArrayInputStream(fileRaw.checkjstring().getBytes(StandardCharsets.UTF_8));
                         }
                         msg = msg.withFiles(MessageCreateFields.File.of(fileTable.get("name").checkjstring(), fileIStream));
+                    }
+
+                    if (messageTable.get("embed") != null && messageTable.get("embed").istable()) {
+                        LuaTable embedTable = messageTable.get("embed").checktable();
+                        EmbedCreateSpec.Builder embed = EmbedCreateSpec.builder();
+
+                        LuaValue author = embedTable.get("author");
+                        if (author != NIL) {
+                            if (author.isstring())
+                                embed.author(author.tojstring(), null, null);
+                            else if (author.istable())
+                                embed.author(author.get("name").tojstring(), author.get("url").tojstring(), author.get("icon_url").checkjstring());
+                        }
+
+                        LuaValue colour = embedTable.get("colour");
+                        if (colour != NIL && colour.isint())
+                            embed.color(Color.of(colour.checkint()));
+
+                        LuaValue desc = embedTable.get("description");
+                        if (desc != NIL && desc.isstring())
+                            embed.description(desc.tojstring());
+
+                        LuaValue image = embedTable.get("image");
+                        if (image != NIL && image.isstring())
+                            embed.image(image.tojstring());
+
+                        LuaValue thumbnail = embedTable.get("thumbnail");
+                        if (thumbnail != NIL && thumbnail.isstring())
+                            embed.thumbnail(thumbnail.tojstring());
+
+                        LuaValue title = embedTable.get("title");
+                        if (title != NIL && title.isstring())
+                            embed.title(title.tojstring());
+
+                        LuaValue url = embedTable.get("url");
+                        if (url != NIL && url.isstring())
+                            embed.url(url.tojstring());
+
+                        LuaValue timestamp = embedTable.get("timestamp");
+                        if (timestamp != NIL && timestamp.islong())
+                            embed.timestamp(Instant.ofEpochSecond(timestamp.checklong()));
+
+                        LuaValue footer = embedTable.get("footer");
+                        if (footer != NIL) {
+                            if (footer.isstring())
+                                embed.footer(footer.tojstring(), null);
+                            else if (footer.istable())
+                                embed.footer(footer.get("name").tojstring(), footer.get("icon_url").checkjstring());
+                        }
+
+                        LuaValue fields = embedTable.get("fields");
+                        if (fields != NIL && fields.istable()) {
+                            for (int i = 1; i < fields.length() + 1; i++) {
+                                LuaValue field = fields.get(i);
+                                if (field != NIL && field.istable()) {
+                                    embed.addField(field.get("name").tojstring(), field.get("body").tojstring(), field.get("inline").optboolean(false));
+                                }
+                            }
+                        }
+
+                        msg = msg.withEmbeds(embed.build());
                     }
 
                     return msg;
