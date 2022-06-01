@@ -7,6 +7,7 @@ import discord4j.core.object.entity.channel.*;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateFields;
 import discord4j.core.spec.MessageCreateMono;
+import discord4j.rest.http.client.ClientException;
 import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Color;
 import discord4j.rest.util.Image;
@@ -274,8 +275,7 @@ public class FloppaLuaLib extends TwoArgFunction {
     public class sendMessage extends OneArgFunction {
         @Override
         public LuaValue call(LuaValue messageData) {
-            msgCount++;
-            if (msgCount > MAX_SENT_MESSAGES) {
+            if (msgCount >= MAX_SENT_MESSAGES) {
                 return FALSE;
             }
             if (messageData.isstring()) {
@@ -294,12 +294,10 @@ public class FloppaLuaLib extends TwoArgFunction {
                     if (msgCount == 1) {
                         msg = msg.withMessageReference(message.getId());
                     }
-                    LuaValue fileTable = NIL;
-                    try {
-                        fileTable = messageTable.get("file").isnil() || !messageTable.get("file").istable() ? NIL : messageTable.get("file");
-                    } catch (Exception ignored) {}
 
-                    if (fileTable != NIL || !fileTable.get("data").isnil()) {
+                    LuaValue fileData = messageTable.get("file");
+                    if (fileData != NIL && fileData.istable() && fileData.get("data") != NIL) {
+                        LuaTable fileTable = fileData.checktable();
                         if (fileTable.get("name") == NIL || !fileTable.get("name").isstring()) {
                             fileTable.set("name", "unknown.txt");
                         }
@@ -375,7 +373,22 @@ public class FloppaLuaLib extends TwoArgFunction {
                     }
 
                     return msg;
+                }).onErrorResume(e -> {
+                    if (e.getClass() == ClientException.class) {
+                        ClientException clientError = (ClientException) e;
+                        if (clientError.getErrorResponse().isPresent() && (int) clientError.getErrorResponse().get().getFields().get("code") == 50006) {
+                            MessageChannel channel = message.getChannel().block();
+                            if (channel != null) {
+                                return channel.createMessage(EmbedCreateSpec.builder()
+                                        .footer("you dumbass, you cannot send a empty message", null)
+                                        .image("https://i.imgur.com/V9R9uVS.gif")
+                                        .build());
+                            }
+                        }
+                    }
+                    return Mono.empty();
                 }).subscribe();
+                msgCount++;
                 return TRUE;
             }
             return error("Message string nor table with message information supplied");
