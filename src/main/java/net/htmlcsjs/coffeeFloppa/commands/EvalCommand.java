@@ -24,20 +24,29 @@ public class EvalCommand implements ICommand{
             code = message.getContent().substring(getName().length() + 1);
             code = code.replace("`", "");
         }
+        if (code.lastIndexOf("\n") == code.indexOf("\n") && !code.matches(".*print\\(\".*\"\\).*") && !code.contains("return")) {
+            code = "return " + code;
+        }
 
         try {
             Varargs returnValue = LuaHelper.runScriptInSandbox(code, message);
 
             StringBuilder msgStr = new StringBuilder();
             boolean isPrintEmpty = LuaHelper.getPrintBufferContents().isEmpty();
+            boolean auxMessagesSent = LuaHelper.getMessagesSentForExecution() > 0;
             if (!isPrintEmpty) {
                 msgStr.append(LuaHelper.getPrintBufferContents()).append("\n");
             }
             if (returnValue.checkboolean(1)) {
                 LuaValue returnedData = returnValue.arg(2);
                 if (returnedData.istable()) {
-                    msgStr.append("```lua\n").append(LuaHelper.startLuaTableToStr(returnedData.checktable())).append("```\n");
-                } else if (returnedData.isnil() && !isPrintEmpty) {
+                    String tableToStr = LuaHelper.startLuaTableToStr(returnedData.checktable());
+                    if (tableToStr.length() < 1750) {
+                        msgStr.append("```lua\n").append(tableToStr).append("```\n");
+                    } else {
+                        msgStr.append(tableToStr).append("\n");
+                    }
+                } else if (returnedData.isnil() && (!isPrintEmpty || auxMessagesSent)) {
                     //pass
                 } else {
                     msgStr.append(returnedData).append("\n");
@@ -48,7 +57,7 @@ public class EvalCommand implements ICommand{
                         .append(returnValue.arg(2)).append("```");
             }
 
-            return msgStr.toString();
+            return msgStr.isEmpty() ? null : msgStr.toString();
         } catch (Exception e) {
             return "An error occurred:```java\n" + e.getMessage() + "\n" + CommandUtil.getStackTraceToString(e, 0) + "```";
         }

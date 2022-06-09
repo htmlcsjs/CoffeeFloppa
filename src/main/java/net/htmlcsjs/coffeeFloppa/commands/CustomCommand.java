@@ -51,9 +51,7 @@ public class CustomCommand implements ICommand {
             if (responses.size() > 1) {
                 index = Math.abs(CoffeeFloppa.randomGen.nextInt()) % responses.size();
             }
-            String msg = responses.get(index);
-            FloppaLogger.logger.info(msg);
-            return msg;
+            return responses.get(index);
         }
     }
 }

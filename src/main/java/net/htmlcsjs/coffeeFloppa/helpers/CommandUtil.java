@@ -2,16 +2,15 @@ package net.htmlcsjs.coffeeFloppa.helpers;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.PartialMember;
+import discord4j.rest.util.Color;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
-import org.json.simple.JSONObject;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,30 +43,10 @@ public class CommandUtil {
         return false;
     }
 
-    public static JSONObject getMessageJson(Message message) {
-        JSONObject messageData = new JSONObject();
-        messageData.put("content", message.getContent());
-        messageData.put("id", message.getId().asString());
-        messageData.put("author", message.getAuthor().get().getId().asString());
-        messageData.put("channel", message.getChannelId().asString());
-        List<PartialMember> memberMentions = message.getMemberMentions();
-        if (memberMentions.isEmpty()) {
-            messageData.put("user_to_use", message.getAuthor().get().getId().asString());
-            for (String str: message.getContent().split(" ")) {
-                try {
-                    messageData.put("user_to_use", Snowflake.of(str).asString());
-                } catch (NumberFormatException ignored) {}
-            }
-        } else {
-            messageData.put("user_to_use", memberMentions.get(0).getId().asString());
-        }
-        return messageData;
-    }
-
     public static String getStackTraceToString(Exception e, int limit) {
         StringBuilder stackTrace = new StringBuilder();
         int i = 0;
-        for (StackTraceElement ste: e.getStackTrace()) {
+        for (StackTraceElement ste : e.getStackTrace()) {
             stackTrace.append(ste).append("\n");
             if (i > limit) {
                 break;
@@ -81,6 +60,14 @@ public class CommandUtil {
         return getStackTraceToString(e, e.getStackTrace().length);
     }
 
+    @NotNull
+    public static String getHexValueFromColour(Color colour) {
+        StringBuilder rawValue = new StringBuilder(Integer.toHexString(colour.getRGB())).reverse();
+        if (rawValue.length() < 6) {
+            rawValue.append("0".repeat(6 - rawValue.length()));
+        }
+        return rawValue.reverse().append("#").reverse().toString();
+    }
 
     public static String getAttachment(Message message) throws IOException, IllegalArgumentException {
         URL url;

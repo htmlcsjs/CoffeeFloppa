@@ -1,26 +1,46 @@
 package net.htmlcsjs.coffeeFloppa.helpers.lua;
 
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Attachment;
-import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.Message;
+import discord4j.core.object.RoleTags;
+import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
+import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.core.spec.MessageCreateFields;
+import discord4j.core.spec.MessageCreateMono;
+import discord4j.rest.http.client.ClientException;
+import discord4j.rest.util.AllowedMentions;
+import discord4j.rest.util.Color;
+import discord4j.rest.util.Image;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
+import net.htmlcsjs.coffeeFloppa.MessageHandler;
+import net.htmlcsjs.coffeeFloppa.commands.CustomCommand;
+import net.htmlcsjs.coffeeFloppa.commands.ICommand;
+import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
+import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.TwoArgFunction;
 import org.luaj.vm2.lib.ZeroArgFunction;
+import reactor.core.publisher.Mono;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 public class FloppaLuaLib extends TwoArgFunction {
     private final Message message;
     private final Guild guild;
+    private int msgCount;
+    public static final int MAX_SENT_MESSAGES = 5;
 
     public FloppaLuaLib(Message message) {
         this.message = message;
         this.guild = message.getGuild().block();
+        this.msgCount = 0;
     }
 
     @Override
@@ -30,10 +50,21 @@ public class FloppaLuaLib extends TwoArgFunction {
         floppaLib.set("msg", new getMessage().call(LuaValue.valueOf(message.getId().asString())));
         floppaLib.set("get_message", new getMessage());
         floppaLib.set("get_channel", new getChannel());
+        floppaLib.set("get_user", new getUser());
+        floppaLib.set("get_role", new getRole());
+        floppaLib.set("send_message", new sendMessage());
+
+        // handles some other stuff added to other packages
+        // mega cursed
+        env.get("package").get("loaded").get("table").set("to_string", new tableToString());
 
         env.set("floppa", floppaLib);
         env.get("package").get("loaded").set("floppa", floppaLib);
         return floppaLib;
+    }
+
+    public int getMsgCount() {
+        return msgCount;
     }
 
     static public class Susso extends ZeroArgFunction {
@@ -71,10 +102,11 @@ public class FloppaLuaLib extends TwoArgFunction {
             }
 
             LuaValue messageData = tableOf();
-            messageCurrent.getAuthor().ifPresent(author -> messageData.set("author", author.getId().asString()));
+            messageCurrent.getAuthor().ifPresent(author -> messageData.set("author", new getUser().call(valueOf(author.getId().asString()))));
             messageData.set("id", messageCurrent.getId().asString());
             messageData.set("contents", messageCurrent.getContent());
-            messageData.set("channel", messageCurrent.getChannelId().asString());
+            messageData.set("channel", new getChannel().call(messageCurrent.getChannelId().asString()));
+            messageData.set("flags", LuaHelper.getLuaValueFromList(messageCurrent.getFlags().stream().map(Enum::name).toList()));
             List<String> attachmentList = messageCurrent.getAttachments().stream().map(Attachment::getUrl).toList();
             if (!attachmentList.isEmpty()) {
                 messageData.set("attachments", LuaHelper.getLuaValueFromList(attachmentList));
@@ -84,7 +116,6 @@ public class FloppaLuaLib extends TwoArgFunction {
     }
 
     public class getChannel extends OneArgFunction {
-
         @Override
         public LuaValue call(LuaValue channelID) {
             try {
@@ -145,6 +176,222 @@ public class FloppaLuaLib extends TwoArgFunction {
             } catch (Exception e) {
                 return error(e.getMessage());
             }
+        }
+    }
+
+    public class getUser extends OneArgFunction {
+        @Override
+        public LuaValue call(LuaValue userId) {
+            try {
+                if (guild == null) {
+                    FloppaLogger.logger.error("ERROR, Guild is null\n" + message);
+                    return error("The referenced guild is null\nThis might be a problem on the bots side");
+                }
+                Snowflake userSnowflake = Snowflake.of(userId.checkjstring());
+                Member member = guild.getMemberById(userSnowflake).block();
+                if (member == null) {
+                    return error("Couldn't find the member with the specified id.");
+                }
+                LuaValue memberData = tableOf();
+
+                member.getAccentColor().ifPresent(colour -> memberData.set("accent_colour", CommandUtil.getHexValueFromColour(colour)));
+                memberData.set("animated_avatar", valueOf(member.hasAnimatedAvatar()));
+                memberData.set("animated_banner", valueOf(member.hasAnimatedBanner()));
+                memberData.set("animated_guild_avatar", valueOf(member.hasAnimatedGuildAvatar()));
+                memberData.set("avatar_url", member.getAvatarUrl());
+                member.getBannerUrl().ifPresent(url -> memberData.set("banner_url", url));
+                memberData.set("bot", valueOf(member.isBot()));
+                Color colour = member.getColor().block();
+                if (colour != null) {
+                    memberData.set("colour", CommandUtil.getHexValueFromColour(colour));
+                }
+                memberData.set("discriminator", member.getDiscriminator());
+                memberData.set("display_name", member.getDisplayName());
+                memberData.set("default_avatar_url", member.getDefaultAvatarUrl());
+                List<String> flags = member.getPublicFlags().stream().map(Enum::name).toList();
+                memberData.set("flags", LuaHelper.getLuaValueFromList(flags));
+                member.getGuildAvatarUrl(member.hasAnimatedGuildAvatar() ? Image.Format.GIF : Image.Format.PNG).ifPresent(url -> memberData.set("guild_avatar", url));
+                member.getNickname().ifPresent(nick -> memberData.set("nick", nick));
+                List<String> roleIds = member.getRoleIds().stream().map(Snowflake::asString).toList();
+                memberData.set("roles", LuaHelper.getLuaValueFromList(roleIds));
+                memberData.set("tag", member.getTag());
+                memberData.set("username", member.getUsername());
+
+                return memberData;
+            } catch (Exception e) {
+                return error(e.getMessage());
+            }
+        }
+    }
+
+    public class getRole extends OneArgFunction {
+        @Override
+        public LuaValue call(LuaValue arg) {
+            try {
+                if (guild == null) {
+                    FloppaLogger.logger.error("ERROR, Guild is null\n" + message);
+                    return error("The referenced guild is null\nThis might be a problem on the bots side");
+                }
+                Snowflake roleSnowflake = Snowflake.of(arg.tojstring());
+                Role role = guild.getRoleById(roleSnowflake).block();
+                if (role == null) {
+                    return error("Couldn't find a role with the id " + arg.tojstring());
+                }
+                LuaValue roleData = tableOf();
+
+                roleData.set("name", role.getName());
+                roleData.set("id", role.getId().asString());
+                roleData.set("colour", CommandUtil.getHexValueFromColour(role.getColor()));
+                roleData.set("permissions", LuaHelper.getLuaValueFromList(role.getPermissions().asEnumSet().stream().map(Enum::name).toList()));
+                if (role.getTags().isPresent()) {
+                    RoleTags roleTags = role.getTags().get();
+                    roleData.set("nitro_role", valueOf(roleTags.isPremiumSubscriberRole()));
+                    roleTags.getBotId().ifPresent(botId -> roleData.set("bot_id", botId.asString()));
+                    roleTags.getIntegrationId().ifPresent(id -> roleData.set("integration_id", id.asString()));
+                } else {
+                    roleData.set("nitro_role", FALSE);
+                }
+                roleData.set("is_everyone", valueOf(role.isEveryone()));
+                roleData.set("is_separated", valueOf(role.isHoisted()));
+                roleData.set("is_mentionable", valueOf(role.isMentionable()));
+
+                return roleData;
+            } catch (Exception e) {
+                return error(e.getMessage());
+            }
+        }
+    }
+
+    public static class tableToString extends OneArgFunction {
+        @Override
+        public LuaValue call(LuaValue table) {
+            if (!table.istable()) {
+                return error("argument isn't a table.");
+            }
+            return valueOf(LuaHelper.startLuaTableToStr(table.checktable()));
+        }
+    }
+
+    public class sendMessage extends OneArgFunction {
+        @Override
+        public LuaValue call(LuaValue messageData) {
+            if (msgCount >= MAX_SENT_MESSAGES) {
+                return FALSE;
+            }
+            if (messageData.isstring()) {
+                ICommand funnyCommand = new CustomCommand("how are you here", Collections.singletonList(messageData.checkjstring()));
+                Mono<Object> messageSendMono = MessageHandler.sendMessage(message, funnyCommand, msgCount == 1);
+                if (messageSendMono == null) {
+                    FloppaLogger.logger.error(String.format("message \"%s\" has caused %s to be null", messageData.checkjstring(), funnyCommand));
+                    return error("Internal error");
+                } else messageSendMono.subscribe();
+                return TRUE;
+            } else if (messageData.istable()) {
+                LuaTable messageTable = messageData.checktable();
+                message.getChannel().flatMap(channel -> {
+                    MessageCreateMono msg = channel.createMessage(messageTable.get("content").optjstring(""))
+                            .withAllowedMentions(AllowedMentions.suppressEveryone());
+                    if (msgCount == 1) {
+                        msg = msg.withMessageReference(message.getId());
+                    }
+
+                    LuaValue fileData = messageTable.get("file");
+                    if (fileData != NIL && fileData.istable() && fileData.get("data") != NIL) {
+                        LuaTable fileTable = fileData.checktable();
+                        if (fileTable.get("name") == NIL || !fileTable.get("name").isstring()) {
+                            fileTable.set("name", "unknown.txt");
+                        }
+                        LuaValue fileRaw = fileTable.get("data");
+                        InputStream fileIStream;
+                        if (fileRaw.isuserdata()) {
+                            fileIStream = new ByteArrayInputStream((byte[]) fileRaw.checkuserdata());
+                        } else {
+                            fileIStream = new ByteArrayInputStream(fileRaw.checkjstring().getBytes(StandardCharsets.UTF_8));
+                        }
+                        msg = msg.withFiles(MessageCreateFields.File.of(fileTable.get("name").checkjstring(), fileIStream));
+                    }
+
+                    if (messageTable.get("embed") != null && messageTable.get("embed").istable()) {
+                        LuaTable embedTable = messageTable.get("embed").checktable();
+                        EmbedCreateSpec.Builder embed = EmbedCreateSpec.builder();
+
+                        LuaValue author = embedTable.get("author");
+                        if (author != NIL) {
+                            if (author.isstring())
+                                embed.author(author.tojstring(), null, null);
+                            else if (author.istable())
+                                embed.author(author.get("name").tojstring(), author.get("url").tojstring(), author.get("icon_url").checkjstring());
+                        }
+
+                        LuaValue colour = embedTable.get("colour");
+                        if (colour != NIL && colour.isint())
+                            embed.color(Color.of(colour.checkint()));
+
+                        LuaValue desc = embedTable.get("description");
+                        if (desc != NIL && desc.isstring())
+                            embed.description(desc.tojstring());
+
+                        LuaValue image = embedTable.get("image");
+                        if (image != NIL && image.isstring())
+                            embed.image(image.tojstring());
+
+                        LuaValue thumbnail = embedTable.get("thumbnail");
+                        if (thumbnail != NIL && thumbnail.isstring())
+                            embed.thumbnail(thumbnail.tojstring());
+
+                        LuaValue title = embedTable.get("title");
+                        if (title != NIL && title.isstring())
+                            embed.title(title.tojstring());
+
+                        LuaValue url = embedTable.get("url");
+                        if (url != NIL && url.isstring())
+                            embed.url(url.tojstring());
+
+                        LuaValue timestamp = embedTable.get("timestamp");
+                        if (timestamp != NIL && timestamp.islong())
+                            embed.timestamp(Instant.ofEpochSecond(timestamp.checklong()));
+
+                        LuaValue footer = embedTable.get("footer");
+                        if (footer != NIL) {
+                            if (footer.isstring())
+                                embed.footer(footer.tojstring(), null);
+                            else if (footer.istable())
+                                embed.footer(footer.get("body").tojstring(), footer.get("icon_url").checkjstring());
+                        }
+
+                        LuaValue fields = embedTable.get("fields");
+                        if (fields != NIL && fields.istable()) {
+                            for (int i = 1; i < fields.length() + 1; i++) {
+                                LuaValue field = fields.get(i);
+                                if (field != NIL && field.istable()) {
+                                    embed.addField(field.get("name").tojstring(), field.get("body").tojstring(), field.get("inline").optboolean(false));
+                                }
+                            }
+                        }
+
+                        msg = msg.withEmbeds(embed.build());
+                    }
+
+                    return msg;
+                }).onErrorResume(e -> {
+                    if (e.getClass() == ClientException.class) {
+                        ClientException clientError = (ClientException) e;
+                        if (clientError.getErrorResponse().isPresent() && (int) clientError.getErrorResponse().get().getFields().get("code") == 50006) {
+                            MessageChannel channel = message.getChannel().block();
+                            if (channel != null) {
+                                return channel.createMessage(EmbedCreateSpec.builder()
+                                        .footer("you dumbass, you cannot send a empty message", null)
+                                        .image("https://i.imgur.com/V9R9uVS.gif")
+                                        .build());
+                            }
+                        }
+                    }
+                    return Mono.empty();
+                }).subscribe();
+                msgCount++;
+                return TRUE;
+            }
+            return error("Message string nor table with message information supplied");
         }
     }
 }

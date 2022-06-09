@@ -16,6 +16,7 @@ public class LuaHelper {
     private static final int tabSize = 4;
     private static final List<LuaTable> hitTables = new ArrayList<>();
     private static StringBuilder printBuffer = new StringBuilder();
+    private static FloppaLuaLib floppaLib;
 
     public static void initLuaServer() {
         // Create server globals with just enough library support to compile user scripts.
@@ -40,6 +41,7 @@ public class LuaHelper {
     public static Varargs runScriptInSandbox(String script, Message message) {
 
         printBuffer = new StringBuilder();
+        floppaLib = new FloppaLuaLib(message);
 
         Globals user_globals = new Globals();
         user_globals.load(new JseBaseLib());
@@ -48,8 +50,9 @@ public class LuaHelper {
         user_globals.load(new TableLib());
         user_globals.load(new StringLib());
         user_globals.load(new JseMathLib());
-        user_globals.load(new FloppaLuaLib(message));
+        user_globals.load(floppaLib);
         user_globals.load(new HTTPLib());
+        user_globals.load(new LuaBufferLib());
         user_globals.set("print", new PrintFunc());
         user_globals.set("maths", user_globals.get("math"));
 
@@ -107,14 +110,14 @@ public class LuaHelper {
             if (value.istable()) {
                 if (!hitTables.contains(value.checktable())) {
                     hitTables.add(value.checktable());
-                    tableStrBuilder.append(": ").append(luaTableToString(value.checktable(), tabLevel + tabSize)).append(",").append("\n");
+                    tableStrBuilder.append(": ").append(luaTableToString(value.checktable(), tabLevel + tabSize)).append(",\n");
                 } else {
-                    return "<recursive table acquired>";
+                    tableStrBuilder.append(": ").append("<recursive table>").append(",\n");
                 }
             } else if (value.isstring()){
                 tableStrBuilder.append(": \"").append(value).append("\",").append("\n");
             } else {
-                tableStrBuilder.append(": ").append(value).append(",").append("\n");
+                tableStrBuilder.append(": ").append(value).append(",\n");
             }
 
         }
@@ -144,5 +147,9 @@ public class LuaHelper {
             array.set(i+1, element.toString());
         }
         return array;
+    }
+
+    public static int getMessagesSentForExecution() {
+        return floppaLib.getMsgCount();
     }
 }
