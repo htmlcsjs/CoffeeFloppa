@@ -2,18 +2,15 @@ package net.htmlcsjs.coffeeFloppa.helpers;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.PartialMember;
 import discord4j.rest.util.Color;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 import org.jetbrains.annotations.NotNull;
-import org.json.simple.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,7 +46,7 @@ public class CommandUtil {
     public static String getStackTraceToString(Exception e, int limit) {
         StringBuilder stackTrace = new StringBuilder();
         int i = 0;
-        for (StackTraceElement ste: e.getStackTrace()) {
+        for (StackTraceElement ste : e.getStackTrace()) {
             stackTrace.append(ste).append("\n");
             if (i > limit) {
                 break;
@@ -63,34 +60,14 @@ public class CommandUtil {
         return getStackTraceToString(e, e.getStackTrace().length);
     }
 
-
-    public static String getAttachment(Message message) throws IOException, IllegalArgumentException {
-        URL url;
-        if (message.getAttachments().size() > 0) {
-            url = new URL(message.getAttachments().get(0).getUrl());
-        } else {
-            Matcher urlMatcher = urlPattern.matcher(message.getContent());
-            String urlStr = "";
-            while (urlMatcher.find()) {
-                urlStr = message.getContent().substring(urlMatcher.start(), urlMatcher.end());
-            }
-            if (urlStr.equals("")) {
-                throw new IllegalArgumentException("Could not find URL in message contents");
-            }
-            url = new URL(urlStr);
-        }
-        return new BufferedReader(new InputStreamReader(url.openStream())).lines().collect(Collectors.joining("\n"));
-    }
-
     @NotNull
     public static String getHexValueFromColour(Color colour) {
         StringBuilder rawValue = new StringBuilder(Integer.toHexString(colour.getRGB())).reverse();
         if (rawValue.length() < 6) {
-            rawValue.append("0".repeat(6-rawValue.length()));
+            rawValue.append("0".repeat(6 - rawValue.length()));
         }
         return rawValue.reverse().append("#").reverse().toString();
     }
-
 
     public static String getAttachment(Message message) throws IOException, IllegalArgumentException {
         URL url;
