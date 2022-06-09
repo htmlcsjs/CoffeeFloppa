@@ -356,7 +356,7 @@ public class FloppaLuaLib extends TwoArgFunction {
                             if (footer.isstring())
                                 embed.footer(footer.tojstring(), null);
                             else if (footer.istable())
-                                embed.footer(footer.get("name").tojstring(), footer.get("icon_url").checkjstring());
+                                embed.footer(footer.get("body").tojstring(), footer.get("icon_url").checkjstring());
                         }
 
                         LuaValue fields = embedTable.get("fields");
