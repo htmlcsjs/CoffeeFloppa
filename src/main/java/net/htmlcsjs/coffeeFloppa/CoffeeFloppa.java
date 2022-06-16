@@ -119,6 +119,7 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new RefreshCommand());
         MessageHandler.addCommand(new StoikCommand());
         MessageHandler.addCommand(new VersionCommand());
+        MessageHandler.addCommand(new OcCommand());
 
         if ((boolean) jsonData.getOrDefault("evalEnabled", false)) {
             MessageHandler.addCommand(new EvalCommand());

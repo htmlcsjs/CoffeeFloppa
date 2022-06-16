@@ -9,15 +9,13 @@ plugins {
 group = "net.htmlcsjs"
 version = "0.2.0"
 
-var d4jVersion = "3.2.2"
-var logbackVersion = "1.2.11"
-var simpleJSONVersion = "1.1.1"
-var fuzzywuzzyVersion = "1.4.0"
-
 repositories {
     mavenCentral()
     maven {
         setUrl("https://mvnrepository.com/artifact")
+    }
+    maven {
+        setUrl("https://cursemaven.com")
     }
 }
 
@@ -33,6 +31,7 @@ dependencies {
     implementation("me.xdrop:fuzzywuzzy:1.4.0")
     implementation("org.luaj:luaj-jse:3.0.1")
     implementation("org.jetbrains:annotations:23.0.0")
+    implementation("curse.maven:gtceu-557242:3808907")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
 }
