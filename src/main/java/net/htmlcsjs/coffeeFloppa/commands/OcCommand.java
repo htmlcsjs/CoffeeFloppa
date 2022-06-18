@@ -14,8 +14,17 @@ import java.util.List;
 
 public class OcCommand implements ICommand {
 
-    private static final String aboutStr = "This calculates oc according to gt's logic";
-    private static final String errorStr = "must be formatted as eut, duration, and have the flag `--ticks` if you want answers in ticks";
+    private static final String aboutStr = "This calculates oc according to with CEus logic";
+    private static final String errorStr = """
+    ```sh
+    must be formatted as $oc EU/t duration [flags]
+    Flags:
+     --ticks - have the duration in ticks
+     --tj    - use 2.8 for oc (for the TJ pack)
+    ```
+    """;
+    private static final String[] TJVN = {"ULV", "LV", "MV", "HV", "EV", "IV", "LuV", "ZPM", "UV", "UHV", "UEV", "UIV", "UMV", "UXV", "MAX"};
+
 
     @Override
     public @NotNull String getName() {
@@ -35,20 +44,21 @@ public class OcCommand implements ICommand {
                 int eut = Integer.parseInt(args.get(1));
                 float duration = Float.parseFloat(args.get(2));
                 boolean ticks = args.contains("--ticks");
+                boolean tj = args.contains("--tj");
 
                 List<String[]> outputList = new ArrayList<>();
 
                 byte startingVoltage = GTUtility.getTierByVoltage(eut);
                 for (int v = startingVoltage; v <= GTValues.MAX; v++) {
                     String[] sus = {"", "", ""};
-                    int[] ocResult = OverclockingLogic.standardOverclockingLogic(eut, GTValues.V[v], (int) Math.floor(ticks ? duration : (duration * 20)), 2, 4, 14);
+                    int[] ocResult = OverclockingLogic.standardOverclockingLogic(eut, GTValues.V[v], (int) Math.floor(ticks ? duration : (duration * 20)), tj ? 2.8: 2, 4, 14);
                     sus[0] = String.format("%,d EU/t", ocResult[0]);
                     if (ticks || ocResult[1] < 10) {
                         sus[1] = String.format("%,dt", ocResult[1]);
                     } else {
                         sus[1] = String.format("%,.2fs", (float)ocResult[1] / 20);
                     }
-                    sus[2] = GTValues.VN[v];
+                    sus[2] = tj ? TJVN[v] : GTValues.VN[v];
                     outputList.add(sus);
                 }
 
@@ -62,7 +72,7 @@ public class OcCommand implements ICommand {
                 }
                 String time = ticks ? String.format("%,ft", duration) : String.format("%,.2fs", duration / 20);
                 message.getChannel().flatMap(channel -> channel.createMessage().withEmbeds(
-                                EmbedCreateSpec.builder().title(String.format("%,d EU/t (%s) for (%s)", eut, GTValues.VN[startingVoltage], time))
+                                EmbedCreateSpec.builder().title(String.format("%,d EU/t (%s) for %s", eut, GTValues.VN[startingVoltage], time) + (tj ? " in TJ" : ""))
                                         .addField("EU/t", eutStr.append("```").toString(), true)
                                         .addField("Time", timeStr.append("```").toString(), true)
                                         .addField("Voltage", voltageStr.append("```").toString(), true)
