@@ -20,4 +20,13 @@ public interface ICommand {
      */
     @Nullable
     String execute(Message message);
+
+    /**
+     * Short amount of info to describe this command
+     * @return the information about the command as a String
+     */
+    default String helpInfo() {
+        Class<? extends ICommand> clazz = this.getClass();
+        return clazz.getSimpleName();
+    }
 }

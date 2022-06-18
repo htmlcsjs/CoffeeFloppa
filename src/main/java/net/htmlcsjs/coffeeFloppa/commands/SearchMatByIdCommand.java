@@ -32,4 +32,9 @@ public class SearchMatByIdCommand implements ICommand {
         }
         return String.format("Sorry, the material with the id %d was not found.", materialID);
     }
+
+    @Override
+    public String helpInfo() {
+        return "Searches and displays material by id";
+    }
 }

@@ -34,4 +34,9 @@ public class GithubIssueCommand implements ICommand {
 
         return String.format("GitHub repository %s not found", repo);
     }
+
+    @Override
+    public String helpInfo() {
+        return "Provides links to issues for github repos";
+    }
 }

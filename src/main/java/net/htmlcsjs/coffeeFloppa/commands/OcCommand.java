@@ -86,4 +86,9 @@ public class OcCommand implements ICommand {
         }
         return epicFormattingFail ? aboutStr + "\n\n" + errorStr : aboutStr;
     }
+
+    @Override
+    public String helpInfo() {
+        return aboutStr;
+    }
 }

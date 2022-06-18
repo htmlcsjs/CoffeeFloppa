@@ -4,7 +4,6 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.spec.MessageCreateFields;
 import discord4j.rest.util.AllowedMentions;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
-import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,5 +52,10 @@ public class CustomCommand implements ICommand {
             }
             return responses.get(index);
         }
+    }
+
+    @Override
+    public String helpInfo() {
+        return "A Custom Command";
     }
 }

@@ -16,4 +16,9 @@ public class FlopCountCommand implements ICommand{
     public String execute(Message message) {
         return String.valueOf((long) CoffeeFloppa.getJsonData().get("flop")) + " flops reacted to since last reset";
     }
+
+    @Override
+    public String helpInfo() {
+        return "amount of flop reactions reacted";
+    }
 }

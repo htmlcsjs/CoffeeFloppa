@@ -34,4 +34,9 @@ public class SearchMatCommand implements ICommand {
         }
         return String.format("Sorry, the material %s was not found.", materialName);
     }
+
+    @Override
+    public String helpInfo() {
+        return "Searches and displays internal material name";
+    }
 }

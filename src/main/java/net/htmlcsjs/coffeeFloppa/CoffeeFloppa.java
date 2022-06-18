@@ -12,6 +12,7 @@ import net.htmlcsjs.coffeeFloppa.commands.*;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import net.htmlcsjs.coffeeFloppa.helpers.MaterialCommandsHelper;
 import net.htmlcsjs.coffeeFloppa.helpers.lua.LuaHelper;
+import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -107,7 +108,7 @@ public class CoffeeFloppa {
 
     public static void refreshCommands() {
         // Add static commands
-        MessageHandler.addCommand(new HelpCommand());
+        MessageHandler.addCommand(new HelpCommand(25));
         MessageHandler.addCommand(new AddCmdCommand());
         MessageHandler.addCommand(new RemoveCmdCommand());
         MessageHandler.addCommand(new FlopCountCommand());
@@ -120,6 +121,16 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new StoikCommand());
         MessageHandler.addCommand(new VersionCommand());
         MessageHandler.addCommand(new OcCommand());
+        MessageHandler.addCommand(new HelpCommand(75) {
+            @Override
+            public @NotNull String getName() {
+                return "commands";
+            }
+            @Override
+            protected String commandProcessor(Map.Entry<String, ICommand> entry) {
+                return String.format("%c%s, ", CoffeeFloppa.prefix, entry.getKey());
+            }
+        });
 
         if ((boolean) jsonData.getOrDefault("evalEnabled", false)) {
             MessageHandler.addCommand(new EvalCommand());

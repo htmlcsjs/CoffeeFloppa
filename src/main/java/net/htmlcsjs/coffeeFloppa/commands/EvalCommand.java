@@ -62,4 +62,9 @@ public class EvalCommand implements ICommand{
             return "An error occurred:```java\n" + e.getMessage() + "\n" + CommandUtil.getStackTraceToString(e, 0) + "```";
         }
     }
+
+    @Override
+    public String helpInfo() {
+        return "Runs code using a lua, more info in the CoffeeFloppa wiki on github";
+    }
 }

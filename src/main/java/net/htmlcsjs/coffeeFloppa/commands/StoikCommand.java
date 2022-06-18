@@ -32,7 +32,7 @@ public class StoikCommand implements ICommand {
         if (formulaSides.length !=2) {
             return """
                     Error, malformed expression
-                    Please format equasion as `Reactant1 + Reactant2 -> Product1 + Product2`
+                    Please format equation as `Reactant1 + Reactant2 -> Product1 + Product2`
                     E.g. `6CO2 + 6H2O -> C6H12O6 + 6O2`
                     """;
         }
@@ -211,5 +211,10 @@ public class StoikCommand implements ICommand {
         IN_BRACKET,
         LOOKING_BRACKET_COUNT,
         LOOKING_COMPOUND_MULTIPLIER
+    }
+
+    @Override
+    public String helpInfo() {
+        return "Check weather a chemical equation is balanced";
     }
 }

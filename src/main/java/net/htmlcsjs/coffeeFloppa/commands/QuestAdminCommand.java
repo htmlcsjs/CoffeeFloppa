@@ -122,4 +122,8 @@ public class QuestAdminCommand implements ICommand{
                  - delete: deletes a questbook""";
     }
 
+    @Override
+    public String helpInfo() {
+        return "Mod only command, DO NOT USE";
+    }
 }

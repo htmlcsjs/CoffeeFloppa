@@ -67,4 +67,9 @@ public class QuestbookCommand implements ICommand {
             return msgBuilder.append("```").toString();
         }
     }
+
+    @Override
+    public String helpInfo() {
+        return "A command to look at quests from the " + qbName + " questbook";
+    }
 }

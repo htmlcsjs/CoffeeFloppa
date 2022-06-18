@@ -22,4 +22,9 @@ public class RefreshCommand implements ICommand {
             return "Config unable to be updated";
         }
     }
+
+    @Override
+    public String helpInfo() {
+        return "Mod only command, DO NOT USE";
+    }
 }

@@ -9,20 +9,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 public class VersionCommand implements ICommand {
-    /**
-     * @return The name/handle of the command
-     */
+
     @Override
     public @NotNull String getName() {
         return "version";
     }
 
-    /**
-     * To be executed when the command is called
-     *
-     * @param message The Message to respond to
-     * @return the String to be sent to the user
-     */
     @Nullable
     @Override
     public String execute(Message message) {
@@ -34,5 +26,10 @@ public class VersionCommand implements ICommand {
             botNickname = optionalNick.orElse(username);
         } catch (Exception ignored) {}
         return String.format("%s is running version `%s`, built with commit `%s`", botNickname, CoffeeFloppa.version, CoffeeFloppa.gitRef);
+    }
+
+    @Override
+    public String helpInfo() {
+        return "Displays the version of CoffeeFloppa this bot is running";
     }
 }

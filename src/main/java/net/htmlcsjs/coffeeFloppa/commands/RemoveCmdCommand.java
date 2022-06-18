@@ -52,4 +52,9 @@ public class RemoveCmdCommand implements ICommand {
             return "Sorry, but you dont have the required permissions";
         }
     }
+
+    @Override
+    public String helpInfo() {
+        return "Mod only command, DO NOT USE";
+    }
 }

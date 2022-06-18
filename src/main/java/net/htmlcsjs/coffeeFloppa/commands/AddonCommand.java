@@ -35,4 +35,9 @@ public class AddonCommand implements ICommand{
         };
 
     }
+
+    @Override
+    public String helpInfo() {
+        return "lists a bunch of CEu addons";
+    }
 }
