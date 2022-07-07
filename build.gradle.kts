@@ -3,11 +3,14 @@ import org.apache.tools.ant.filters.ReplaceTokens
 plugins {
     java
     application
+    id("com.github.johnrengelman.shadow") version "7.1.2"
     id("org.ajoberstar.grgit") version "5.0.0"
 }
 
 group = "net.htmlcsjs"
 version = "0.2.1"
+var projectBaseName = "CoffeeFloppa"
+var mainClass = "net.htmlcsjs.coffeeFloppa.CoffeeFloppa"
 
 repositories {
     mavenCentral()
@@ -43,10 +46,19 @@ tasks.create<Copy> ("generateSource") {
     into("$buildDir/sources/src")
 }
 
+
 tasks {
     jar {
         manifest {
-            attributes["Main-Class"] = "net.htmlcsjs.coffeeFloppa.CoffeeFloppa"
+            attributes["Main-Class"] = mainClass
+        }
+
+        archiveBaseName.set(projectBaseName)
+    }
+    shadowJar {
+        archiveBaseName.set("$projectBaseName-Uber")
+        dependencies {
+            exclude(dependency("org.junit.jupiter:.*"))
         }
     }
     test {

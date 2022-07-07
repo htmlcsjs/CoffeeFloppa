@@ -32,13 +32,8 @@ jobs:
         run: chmod +x gradlew
       - name: Build with Gradle
         run: ./gradlew build
-      - name: Attach dist zip
+      - name: Attach jars
         uses: actions/upload-artifact@v2
         with:
-          name: distZip
-          path: build/distributions/*.zip
-      - name: Attach jar
-        uses: actions/upload-artifact@v2
-        with:
-          name: floppaJar
+          name: floppaJars
           path: build/libs/*.jar
