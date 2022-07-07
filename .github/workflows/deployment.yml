@@ -1,0 +1,21 @@
+name: Deploy to Dev/Production
+
+on:
+  push:
+    branches:
+      - flop
+  workflow_dispatch
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up SSH
+        run: |
+          mkdir ~/.ssh
+          echo "${{ secrets.ID_RSA_GITHUB }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+      - name: activate script on server
+        run: | 
+          /bin/ssh ${{ secrets.SERVER_IP }} bash /opt/update.sh
