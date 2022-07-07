@@ -18,4 +18,4 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
       - name: activate script on server
         run: | 
-          ssh -o stricthostkeychecking=no ${{ secrets.SERVER_IP }} bash /opt/update.sh
+          ssh -o stricthostkeychecking=no ${{ secrets.SERVER_IP }} bash /opt/update.sh &
