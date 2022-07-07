@@ -18,14 +18,14 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import reactor.core.publisher.Mono;
 
-import java.io.*;
-import java.net.URI;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 public class CoffeeFloppa {
     public static Random randomGen;
@@ -33,7 +33,6 @@ public class CoffeeFloppa {
     public static char prefix;
     public static Map<String, String> adminRolesByGuild;
     public static Snowflake admin;
-    public static String ip;
     public static Map<String, Object> emoteData;
     public static String deletionEmote = "\uD83D\uDDD1️";
     public static String version = "@VERSION@";
@@ -62,9 +61,6 @@ public class CoffeeFloppa {
         } catch (Exception e) {
             FloppaLogger.logger.error(CommandUtil.getStackTraceToString(e));
         }
-
-        URL ipGetURL = new URI("https://ifconfig.me/").toURL();
-        ip = new BufferedReader(new InputStreamReader(ipGetURL.openStream())).lines().collect(Collectors.joining("\n"));
 
         Mono<Void> login = client.withGateway((GatewayDiscordClient gateway) -> {
             // Login message
