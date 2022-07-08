@@ -35,6 +35,7 @@ dependencies {
     implementation("org.luaj:luaj-jse:3.0.1")
     implementation("org.jetbrains:annotations:23.0.0")
     implementation("curse.maven:gtceu-557242:3808907")
+    implementation("org.reflections:reflections:0.10.2")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
 }

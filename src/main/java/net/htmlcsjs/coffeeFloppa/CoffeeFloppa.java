@@ -12,6 +12,7 @@ import net.htmlcsjs.coffeeFloppa.commands.*;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import net.htmlcsjs.coffeeFloppa.helpers.MaterialCommandsHelper;
 import net.htmlcsjs.coffeeFloppa.helpers.lua.LuaHelper;
+import net.htmlcsjs.coffeeFloppa.toml.TomlAnnotationProcessor;
 import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -44,6 +45,7 @@ public class CoffeeFloppa {
         // Init stuff
         FloppaLogger.init();
         refreshConfig();
+        TomlAnnotationProcessor.processAnnotations();
         client = DiscordClient.create((String) jsonData.get("token"));
         admin = Snowflake.of((String) jsonData.get("admin"));
         randomGen = new Random();
