@@ -45,7 +45,8 @@ public class CoffeeFloppa {
         // Init stuff
         FloppaLogger.init();
         refreshConfig();
-        TomlAnnotationProcessor.processAnnotations();
+        TomlAnnotationProcessor.loadConfigs();
+        TomlAnnotationProcessor.saveConfigs();
         client = DiscordClient.create((String) jsonData.get("token"));
         admin = Snowflake.of((String) jsonData.get("admin"));
         randomGen = new Random();
@@ -191,7 +192,7 @@ public class CoffeeFloppa {
         updateConfigFile(newJsonData);
     }
 
-    private static String formatJSONStr(String jsonString, int indent_width) {
+    public static String formatJSONStr(String jsonString, int indent_width) {
         StringBuilder returnBuilder = new StringBuilder();
         boolean inQuotes = false;
         int indent = 0;
