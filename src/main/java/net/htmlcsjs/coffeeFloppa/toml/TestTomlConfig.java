@@ -21,10 +21,7 @@ public class TestTomlConfig {
     @TomlConfig.ConfigElement(location = "double")
     public static double testDouble = 238748923746.27364723478;
 
-    @TomlConfig.ConfigElement(location = "array")
-    public static String[] strArray = {"test", "among", "sus"};
-
-    @TomlConfig.ConfigElement(location = "list")
+    @TomlConfig.ConfigElement(location = "list", listType = String.class)
     public static List<String> strList = Arrays.asList("Morb", "floppa", "greg");
 
     @TomlConfig.ConfigElement(location = "name.name")

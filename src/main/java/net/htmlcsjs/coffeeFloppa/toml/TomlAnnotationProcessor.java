@@ -6,45 +6,77 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.json.simple.JSONObject;
 import org.reflections.Reflections;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.reflections.scanners.Scanners.TypesAnnotated;
 
+
 public class TomlAnnotationProcessor {
 
     private static Reflections reflections;
     private static List<Class<?>> annotations;
-    private static List<String> fieldList;
+    private static Map<String, Map<String, String>> fieldMap;
     private static boolean inited = false;
 
     public static void loadConfigs() {
         initReflections();
-        Map<String, List<String>> dataLocMap = new HashMap<>();
-
-        /*for (String fieldLoc : fieldList) {
-            String[] nameParts = fieldLoc.split("\\|");
+        for (Class<?> clazz : annotations) {
+            TomlConfig configAnnotation = clazz.getAnnotation(TomlConfig.class);
             try {
-                Class<?> clazz = Class.forName(nameParts[0]);
-                Field field = clazz.getField(nameParts[1]);
-                dataLocMap.put()
-            } catch (NoSuchFieldException e) {
-                FloppaLogger.logger.error(String.format("Couldn't find the field %s in class %s", nameParts[1], nameParts[0]));
-            } catch (ClassNotFoundException e) {
-                FloppaLogger.logger.error(String.format("Couldn't find the class %s", nameParts[0]));
+                BufferedReader reader = new BufferedReader(new FileReader("config/" + configAnnotation.filename() + ".toml"));
+                String line = reader.readLine();
+                String curTable = null;
+
+                while (line != null) {
+                    if (line.matches("\\[.*\\]")) {
+                        curTable = line.substring(1, line.length() - 1);
+                    } else {
+                        Map<String, String> classFieldMap = fieldMap.get(clazz.getName());
+
+                        String[] splitLine = line.split("=");
+                        String loc = (curTable != null ? curTable + "." : "") + splitLine[0].strip();
+                        if (classFieldMap.containsKey(loc)) {
+                            String rawValue = Arrays.stream(splitLine).map(s -> !s.equals(splitLine[0]) ? s : "").collect(Collectors.joining()).strip();
+                            Field f = clazz.getField(classFieldMap.get(loc).split(" ")[1]);
+                            f.setAccessible(true);
+                            Object value = getValidValForToml(rawValue, f.getType(), f.getAnnotation(TomlConfig.ConfigElement.class).getClass());
+                            FloppaLogger.logger.info(loc);
+                            if (value != null) {
+                                if (f.getType() == long.class) {
+                                    f.set(null, value);
+                                } else if (f.getType() == int.class) {
+                                    f.set(null, value);
+                                } else if (f.getType() == short.class) {
+                                    f.set(null, value);
+                                } else if (f.getType() == byte.class) {
+                                    f.set(null, value);
+                                } else if (f.getType() == double.class) {
+                                    f.set(null, value);
+                                } else if (f.getType() == float.class) {
+                                    f.set(null, value);
+                                } else {
+                                    f.set(null, f.getType().cast(value));
+                                }
+                            }
+                        }
+                    }
+                    line = reader.readLine();
+                }
+
+                reader.close();
+            } catch (IOException | NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException(e);
             }
-        }*/
+        }
 
         try {
             FileWriter writer = new FileWriter("aaaa.json");
 
             JSONObject jsonObject = new JSONObject();
-            jsonObject.put("data", dataLocMap);
-            jsonObject.put("feilds", fieldList);
+            jsonObject.put("feilds", fieldMap);
             writer.write(CoffeeFloppa.formatJSONStr(jsonObject.toJSONString(), 4));
             writer.close();
         } catch (Exception e) {
@@ -59,24 +91,27 @@ public class TomlAnnotationProcessor {
         inited = true;
         reflections = new Reflections("net.htmlcsjs.coffeeFloppa");
         annotations = reflections.get(TypesAnnotated.with(TomlConfig.class).asClass()).stream().toList();
-        fieldList = new ArrayList<>();
+        fieldMap = new TreeMap<>();
 
         for (Class<?> clazz : annotations) {
+            Map<String, String> classMap = new TreeMap<>();
             for (Field f : clazz.getFields()) {
                 if (f.isAnnotationPresent(TomlConfig.ConfigElement.class)) {
-                    fieldList.add(clazz.getName() + " " + f.getName());
+                    classMap.put(f.getAnnotation(TomlConfig.ConfigElement.class).location(), clazz.getName() + " " + f.getName() + " " + clazz.getAnnotation(TomlConfig.class).filename());
                 }
             }
+            fieldMap.put(clazz.getName(), classMap);
         }
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void saveConfigs() {
         initReflections();
         new File("config/").mkdirs();
         for (Class<?> clazz : annotations) {
             TomlConfig configAnnotation = clazz.getAnnotation(TomlConfig.class);
             try {
-                FileWriter writer = new FileWriter("config/" + configAnnotation.filename() + ".toml");
+                FileWriter writer = new FileWriter("config/" + configAnnotation.filename() + ".sus.toml");
                 for (Field f : clazz.getFields()) {
                     if (f.isAnnotationPresent(TomlConfig.ConfigElement.class)) {
                         TomlConfig.ConfigElement elementAnnotation = f.getAnnotation(TomlConfig.ConfigElement.class);
@@ -85,7 +120,7 @@ public class TomlAnnotationProcessor {
                         } else {
                             writer.write(StringEscapeUtils.escapeJava(elementAnnotation.location()));
                         }
-                        writer.write(" = " + getValidTomlForVal(f.get(null), f.getType()) + "\n");
+                        writer.write(" = " + getValidTomlForVal(f.get(null), f.getType(), elementAnnotation.listType()) + "\n");
                     }
                 }
                 writer.close();
@@ -95,29 +130,55 @@ public class TomlAnnotationProcessor {
         }
     }
 
-    private static String getValidTomlForVal(Object obj, Class<?> clazz) {
-        if (clazz == Long.class) {
+    private static String getValidTomlForVal(Object obj, Class<?> clazz, Class<?> listType) {
+        if (clazz == long.class) {
             return obj == null ? "0" : ((Long) obj).toString();
-        } else if (clazz == Integer.class) {
+        } else if (clazz == int.class) {
             return obj == null ? "0" : ((Integer) obj).toString();
-        } else if (clazz == Short.class) {
+        } else if (clazz == short.class) {
             return obj == null ? "0" : ((Short) obj).toString();
-        } else if (clazz == Byte.class) {
+        } else if (clazz == byte.class) {
             return obj == null ? "0" : ((Byte) obj).toString();
-        } else if (clazz == Float.class || clazz == Double.class) {
+        } else if (clazz == float.class || clazz == double.class) {
             return obj.toString();
-        } else if (clazz.isArray()) {
-            if (obj == null) {
-                return "[]";
-            }
-            return "["+ Arrays.stream((Object[]) obj).map(i -> getValidTomlForVal(i, i.getClass())).collect(Collectors.joining(", ")) + "]";
         } else if (clazz == List.class) {
             if (obj == null) {
                 return "[]";
             }
-            return "["+((List<?>) obj).stream().map(i -> getValidTomlForVal(i, i.getClass())).collect(Collectors.joining(", ")) + "]";
+            return "["+((List<?>) obj).stream().map(i -> getValidTomlForVal(i, listType, listType)).collect(Collectors.joining(", ")) + "]";
         } else {
             return obj == null ? "\"\"" : "\"" + StringEscapeUtils.escapeJava(obj.toString()) + "\"";
+        }
+    }
+
+    private static Object getValidValForToml(String str, Class<?> clazz, Class<?> listType) {
+        if (clazz == long.class) {
+            return Long.getLong(str);
+        } else if (clazz == int.class) {
+            return Integer.getInteger(str);
+        } else if (clazz == short.class) {
+            return Short.parseShort(str);
+        } else if (clazz == byte.class) {
+            return Byte.parseByte(str);
+        } else if (clazz == double.class) {
+            return Double.parseDouble(str);
+        } else if (clazz == float.class){
+            return Float.parseFloat(str);
+        } else if (clazz == List.class) {
+            if (str.equals("[]") || !str.matches("\\[.*\\]")) {
+                return new ArrayList<>();
+            }
+            String susStr = str.substring(1, str.length() - 1);
+            String[] raw = susStr.split(",");
+            List<Object> objs = new ArrayList<>();
+            for (String sus : raw) {
+                objs.add(getValidValForToml(sus, listType, listType));
+            }
+            return objs;
+        } else if (clazz == String.class) {
+            return StringEscapeUtils.unescapeJava(str.substring(1, str.length() -1));
+        } else {
+            return null;
         }
     }
 }
