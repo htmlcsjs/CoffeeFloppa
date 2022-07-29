@@ -18,7 +18,6 @@ public class TomlAnnotationProcessor {
     private static List<Class<?>> annotations;
     private static Map<String, Map<String, String>> fieldMap;
     private static final List<Class<?>> primateClasses = Arrays.asList(long.class, int.class, short.class, byte.class, double.class, float.class);
-    private static boolean inited = false;
 
     public static void loadConfigs() {
         initReflections();
@@ -66,10 +65,6 @@ public class TomlAnnotationProcessor {
     }
 
     private static void initReflections() {
-        if (inited) {
-            return;
-        }
-        inited = true;
         Reflections reflections = new Reflections("net.htmlcsjs.coffeeFloppa");
         annotations = reflections.get(TypesAnnotated.with(TomlConfig.class).asClass()).stream().toList();
         fieldMap = new TreeMap<>();
@@ -78,7 +73,7 @@ public class TomlAnnotationProcessor {
             Map<String, String> classMap = new TreeMap<>();
             for (Field f : clazz.getFields()) {
                 if (f.isAnnotationPresent(TomlConfig.ConfigElement.class)) {
-                    classMap.put(f.getAnnotation(TomlConfig.ConfigElement.class).location(), clazz.getName() + " " + f.getName() + " " + clazz.getAnnotation(TomlConfig.class).filename());
+                    classMap.put(f.getAnnotation(TomlConfig.ConfigElement.class).location(), clazz.getName() + " " + f.getName() + " " + f.getAnnotation(TomlConfig.ConfigElement.class).location());
                 }
             }
             fieldMap.put(clazz.getName(), classMap);
@@ -88,29 +83,70 @@ public class TomlAnnotationProcessor {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void saveConfigs() {
         initReflections();
+
         new File("config/").mkdirs();
         for (Class<?> clazz : annotations) {
             TomlConfig configAnnotation = clazz.getAnnotation(TomlConfig.class);
+            Map<String, String> classFieldMap = fieldMap.get(clazz.getName());
+
+            Map<String, List<String>> tableMap = new TreeMap<>();
+            tableMap.put("", new ArrayList<>());
+            for (String key : classFieldMap.keySet()) {
+                if (key.matches(".*\\..+")) {
+                    String[] splitKey = key.split("\\.");
+                    String table = String.join(".", Arrays.copyOfRange(splitKey, 0, splitKey.length - 1));
+                    if (tableMap.containsKey(table)) {
+                        tableMap.get(table).add(classFieldMap.get(key));
+                    } else {
+                        List<String> tableMapList = new ArrayList<>();
+                        tableMapList.add(classFieldMap.get(key));
+                        tableMap.put(table, tableMapList);
+                    }
+                } else {
+                    tableMap.get("").add(classFieldMap.get(key));
+                }
+            }
+
             try {
                 FileWriter writer = new FileWriter("config/" + configAnnotation.filename() + ".sus.toml");
-                for (Field f : clazz.getFields()) {
+
+                for (String FieldDesc : tableMap.get("")) {
+                    Field f = clazz.getField(FieldDesc.split(" ")[1]);
                     if (f.isAnnotationPresent(TomlConfig.ConfigElement.class)) {
-                        TomlConfig.ConfigElement elementAnnotation = f.getAnnotation(TomlConfig.ConfigElement.class);
-
-                        if (elementAnnotation.location().matches("[A-Za-z\\d_\\-.]*")) {
-                            writer.write(elementAnnotation.location());
-                        } else {
-                            writer.write(StringEscapeUtils.escapeJava(elementAnnotation.location()));
-                        }
-
-                        writer.write(" = " + getValidTomlForVal(f.get(null), f.getGenericType()) + "\n");
+                        writeFieldToFile(writer, f);
                     }
                 }
+
+                for (String table : tableMap.keySet()) {
+                    if (!table.equals("")) {
+                        writer.write(String.format("\n[%s]\n", table));
+                        for (String FieldDesc : tableMap.get(table)) {
+                            Field f = clazz.getField(FieldDesc.split(" ")[1]);
+                            if (f.isAnnotationPresent(TomlConfig.ConfigElement.class)) {
+                                writeFieldToFile(writer, f);
+                            }
+                        }
+                    }
+                }
+
                 writer.close();
-            } catch (IOException | IllegalAccessException e) {
+            } catch (IOException | IllegalAccessException | NoSuchFieldException e) {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private static void writeFieldToFile(FileWriter writer, Field f) throws IOException, IllegalAccessException {
+        TomlConfig.ConfigElement elementAnnotation = f.getAnnotation(TomlConfig.ConfigElement.class);
+        String[] splitLoc = elementAnnotation.location().split("\\.");
+
+        if (splitLoc[splitLoc.length - 1].matches("[A-Za-z\\d_\\-.]*")) {
+            writer.write(splitLoc[splitLoc.length - 1]);
+        } else {
+            writer.write(StringEscapeUtils.escapeJava(splitLoc[splitLoc.length - 1]));
+        }
+
+        writer.write(" = " + getValidTomlForVal(f.get(null), f.getGenericType()) + "\n");
     }
 
     private static String getValidTomlForVal(Object obj, Type type) {

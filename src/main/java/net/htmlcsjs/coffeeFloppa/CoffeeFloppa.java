@@ -45,8 +45,13 @@ public class CoffeeFloppa {
         // Init stuff
         FloppaLogger.init();
         refreshConfig();
+
+        FloppaLogger.logger.info("Staring config sync");
         TomlAnnotationProcessor.loadConfigs();
         TomlAnnotationProcessor.saveConfigs();
+        FloppaLogger.logger.info("Configs synced!");
+
+
         client = DiscordClient.create((String) jsonData.get("token"));
         admin = Snowflake.of((String) jsonData.get("admin"));
         randomGen = new Random();
