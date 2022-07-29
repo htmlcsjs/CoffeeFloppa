@@ -1,13 +1,12 @@
 package net.htmlcsjs.coffeeFloppa.toml;
 
-import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
-import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 import org.apache.commons.text.StringEscapeUtils;
-import org.json.simple.JSONObject;
 import org.reflections.Reflections;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -16,9 +15,9 @@ import static org.reflections.scanners.Scanners.TypesAnnotated;
 
 public class TomlAnnotationProcessor {
 
-    private static Reflections reflections;
     private static List<Class<?>> annotations;
     private static Map<String, Map<String, String>> fieldMap;
+    private static final List<Class<?>> primateClasses = Arrays.asList(long.class, int.class, short.class, byte.class, double.class, float.class);
     private static boolean inited = false;
 
     public static void loadConfigs() {
@@ -31,31 +30,25 @@ public class TomlAnnotationProcessor {
                 String curTable = null;
 
                 while (line != null) {
-                    if (line.matches("\\[.*\\]")) {
+                    if (line.matches("\\[.*]")) {
                         curTable = line.substring(1, line.length() - 1);
                     } else {
                         Map<String, String> classFieldMap = fieldMap.get(clazz.getName());
 
                         String[] splitLine = line.split("=");
                         String loc = (curTable != null ? curTable + "." : "") + splitLine[0].strip();
+
                         if (classFieldMap.containsKey(loc)) {
+
                             String rawValue = Arrays.stream(splitLine).map(s -> !s.equals(splitLine[0]) ? s : "").collect(Collectors.joining()).strip();
                             Field f = clazz.getField(classFieldMap.get(loc).split(" ")[1]);
+
                             f.setAccessible(true);
-                            Object value = getValidValForToml(rawValue, f.getType(), f.getAnnotation(TomlConfig.ConfigElement.class).getClass());
-                            FloppaLogger.logger.info(loc);
+
+                            Object value = getValidValForToml(rawValue, f.getGenericType());
+
                             if (value != null) {
-                                if (f.getType() == long.class) {
-                                    f.set(null, value);
-                                } else if (f.getType() == int.class) {
-                                    f.set(null, value);
-                                } else if (f.getType() == short.class) {
-                                    f.set(null, value);
-                                } else if (f.getType() == byte.class) {
-                                    f.set(null, value);
-                                } else if (f.getType() == double.class) {
-                                    f.set(null, value);
-                                } else if (f.getType() == float.class) {
+                                if (primateClasses.contains(f.getType())) {
                                     f.set(null, value);
                                 } else {
                                     f.set(null, f.getType().cast(value));
@@ -65,22 +58,10 @@ public class TomlAnnotationProcessor {
                     }
                     line = reader.readLine();
                 }
-
                 reader.close();
             } catch (IOException | NoSuchFieldException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
-        }
-
-        try {
-            FileWriter writer = new FileWriter("aaaa.json");
-
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("feilds", fieldMap);
-            writer.write(CoffeeFloppa.formatJSONStr(jsonObject.toJSONString(), 4));
-            writer.close();
-        } catch (Exception e) {
-            FloppaLogger.logger.error(e.getMessage());
         }
     }
 
@@ -89,7 +70,7 @@ public class TomlAnnotationProcessor {
             return;
         }
         inited = true;
-        reflections = new Reflections("net.htmlcsjs.coffeeFloppa");
+        Reflections reflections = new Reflections("net.htmlcsjs.coffeeFloppa");
         annotations = reflections.get(TypesAnnotated.with(TomlConfig.class).asClass()).stream().toList();
         fieldMap = new TreeMap<>();
 
@@ -115,12 +96,14 @@ public class TomlAnnotationProcessor {
                 for (Field f : clazz.getFields()) {
                     if (f.isAnnotationPresent(TomlConfig.ConfigElement.class)) {
                         TomlConfig.ConfigElement elementAnnotation = f.getAnnotation(TomlConfig.ConfigElement.class);
-                        if (elementAnnotation.location().matches("[A-Za-z\\d_\\-\\.]*")) {
+
+                        if (elementAnnotation.location().matches("[A-Za-z\\d_\\-.]*")) {
                             writer.write(elementAnnotation.location());
                         } else {
                             writer.write(StringEscapeUtils.escapeJava(elementAnnotation.location()));
                         }
-                        writer.write(" = " + getValidTomlForVal(f.get(null), f.getType(), elementAnnotation.listType()) + "\n");
+
+                        writer.write(" = " + getValidTomlForVal(f.get(null), f.getGenericType()) + "\n");
                     }
                 }
                 writer.close();
@@ -130,53 +113,65 @@ public class TomlAnnotationProcessor {
         }
     }
 
-    private static String getValidTomlForVal(Object obj, Class<?> clazz, Class<?> listType) {
-        if (clazz == long.class) {
+    private static String getValidTomlForVal(Object obj, Type type) {
+        if (type == long.class) {
             return obj == null ? "0" : ((Long) obj).toString();
-        } else if (clazz == int.class) {
+        } else if (type == int.class) {
             return obj == null ? "0" : ((Integer) obj).toString();
-        } else if (clazz == short.class) {
+        } else if (type == short.class) {
             return obj == null ? "0" : ((Short) obj).toString();
-        } else if (clazz == byte.class) {
+        } else if (type == byte.class) {
             return obj == null ? "0" : ((Byte) obj).toString();
-        } else if (clazz == float.class || clazz == double.class) {
+        } else if (type == float.class || type == double.class) {
             return obj.toString();
-        } else if (clazz == List.class) {
+        } else if (type.getTypeName().matches("java\\.util\\.List<.*>")) {
             if (obj == null) {
                 return "[]";
             }
-            return "["+((List<?>) obj).stream().map(i -> getValidTomlForVal(i, listType, listType)).collect(Collectors.joining(", ")) + "]";
+            Type listGenericType = ((ParameterizedType) type).getActualTypeArguments()[0];
+            return "["+((List<?>) obj).stream().map(i -> getValidTomlForVal(i, listGenericType)).collect(Collectors.joining(", ")) + "]";
         } else {
             return obj == null ? "\"\"" : "\"" + StringEscapeUtils.escapeJava(obj.toString()) + "\"";
         }
     }
 
-    private static Object getValidValForToml(String str, Class<?> clazz, Class<?> listType) {
-        if (clazz == long.class) {
+    private static Object getValidValForToml(String str, Type type) {
+        if (type == long.class) {
             return Long.getLong(str);
-        } else if (clazz == int.class) {
+        } else if (type == int.class) {
             return Integer.getInteger(str);
-        } else if (clazz == short.class) {
+        } else if (type == short.class) {
             return Short.parseShort(str);
-        } else if (clazz == byte.class) {
+        } else if (type == byte.class) {
             return Byte.parseByte(str);
-        } else if (clazz == double.class) {
+        } else if (type == double.class) {
             return Double.parseDouble(str);
-        } else if (clazz == float.class){
+        } else if (type == float.class){
             return Float.parseFloat(str);
-        } else if (clazz == List.class) {
-            if (str.equals("[]") || !str.matches("\\[.*\\]")) {
+        } else if (type.getTypeName().matches("java\\.util\\.List<.*>")) {
+
+            if (str.equals("[]") || !str.matches("\\[.*]")) {
                 return new ArrayList<>();
             }
-            String susStr = str.substring(1, str.length() - 1);
-            String[] raw = susStr.split(",");
+
+            Type listGenericType = ((ParameterizedType) type).getActualTypeArguments()[0];
             List<Object> objs = new ArrayList<>();
-            for (String sus : raw) {
-                objs.add(getValidValForToml(sus, listType, listType));
+
+            for (String sus : str.substring(1, str.length() - 1).split(",")) {
+                objs.add(getValidValForToml(sus.strip(), listGenericType));
             }
+
             return objs;
-        } else if (clazz == String.class) {
-            return StringEscapeUtils.unescapeJava(str.substring(1, str.length() -1));
+        } else if (type == String.class) {
+            if (str.matches("\"\"\".*\"\"\"") || str.matches("'''.*'''")) {
+                throw new RuntimeException("multiline strings are not implemented");
+            } else if (str.matches("\".*\"")) {
+                return StringEscapeUtils.unescapeJava(str.substring(1, str.length() -1));
+            } else if (str.matches("'.*'")) {
+                return str.substring(1, str.length() -1);
+            } else {
+                throw new RuntimeException("String not of valid structure");
+            }
         } else {
             return null;
         }

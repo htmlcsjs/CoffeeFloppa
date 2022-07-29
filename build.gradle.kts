@@ -41,13 +41,17 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
 }
 
+tasks.create<Delete> ("deleteGeneratedSources") {
+    delete("$buildDir/sources/src/")
+}
+
 tasks.create<Copy> ("generateSource") {
     from("src") {
         filter(ReplaceTokens::class, "tokens" to mapOf("VERSION" to version, "GIT_VER" to grgit.head().id))
     }
     into("$buildDir/sources/src")
+    dependsOn("deleteGeneratedSources")
 }
-
 
 tasks {
     jar {

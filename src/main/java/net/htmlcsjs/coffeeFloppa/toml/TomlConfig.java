@@ -25,7 +25,5 @@ public @interface TomlConfig {
     @Target(ElementType.FIELD)
     public @interface ConfigElement {
         String location();
-
-        Class<?> listType() default String.class;
     }
 }
