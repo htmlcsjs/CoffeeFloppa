@@ -58,6 +58,7 @@ public class TomlAnnotationProcessor {
                     line = reader.readLine();
                 }
                 reader.close();
+            } catch (FileNotFoundException ignored) {
             } catch (IOException | NoSuchFieldException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }

@@ -1,6 +1,5 @@
 package net.htmlcsjs.coffeeFloppa;
 
-import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
@@ -32,8 +31,6 @@ public class CoffeeFloppa {
     public static Random randomGen;
     public static DiscordClient client;
     public static char prefix;
-    public static Map<String, String> adminRolesByGuild;
-    public static Snowflake admin;
     public static Map<String, Object> emoteData;
     public static String deletionEmote = "\uD83D\uDDD1️";
     public static String version = "@VERSION@";
@@ -53,15 +50,11 @@ public class CoffeeFloppa {
 
 
         client = DiscordClient.create((String) jsonData.get("token"));
-        admin = Snowflake.of((String) jsonData.get("admin"));
         randomGen = new Random();
         prefix = ((String) jsonData.get("prefix")).charAt(0);
 
         // Generate inital commands
         refreshCommands();
-
-        // Get adminRolesByGuild;
-        adminRolesByGuild = (Map<String, String>) jsonData.get("guilds");
 
         // Load lang for materials
         try (FileReader reader = new FileReader("materials.lang")) {
