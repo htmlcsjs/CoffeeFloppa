@@ -7,6 +7,8 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -109,7 +111,11 @@ public class TomlAnnotationProcessor {
             }
 
             try {
-                FileWriter writer = new FileWriter("config/" + configAnnotation.filename() + ".sus.toml");
+
+                Path target = Path.of("config/" + configAnnotation.filename() + ".toml.bak");
+                Files.deleteIfExists(target);
+                Files.copy(Path.of("config/" + configAnnotation.filename() + ".toml"), target);
+                FileWriter writer = new FileWriter("config/" + configAnnotation.filename() + ".toml");
 
                 for (String FieldDesc : tableMap.get("")) {
                     Field f = clazz.getField(FieldDesc.split(" ")[1]);
@@ -174,9 +180,9 @@ public class TomlAnnotationProcessor {
 
     private static Object getValidValForToml(String str, Type type) {
         if (type == long.class) {
-            return Long.getLong(str);
+            return Long.parseLong(str);
         } else if (type == int.class) {
-            return Integer.getInteger(str);
+            return Integer.parseInt(str);
         } else if (type == short.class) {
             return Short.parseShort(str);
         } else if (type == byte.class) {
@@ -186,14 +192,12 @@ public class TomlAnnotationProcessor {
         } else if (type == float.class){
             return Float.parseFloat(str);
         } else if (type.getTypeName().matches("java\\.util\\.List<.*>")) {
-
+            List<Object> objs = new ArrayList<>();
             if (str.equals("[]") || !str.matches("\\[.*]")) {
-                return new ArrayList<>();
+                return objs;
             }
 
             Type listGenericType = ((ParameterizedType) type).getActualTypeArguments()[0];
-            List<Object> objs = new ArrayList<>();
-
             for (String sus : str.substring(1, str.length() - 1).split(",")) {
                 objs.add(getValidValForToml(sus.strip(), listGenericType));
             }

@@ -3,6 +3,7 @@ package net.htmlcsjs.coffeeFloppa.commands;
 import discord4j.core.object.entity.Message;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
+import net.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -44,9 +45,9 @@ public class RemoveCmdCommand implements ICommand {
             jsonData.put("commands", newCommands);
             CoffeeFloppa.updateConfigFile(jsonData);
             if (removed) {
-                return "command " + CoffeeFloppa.prefix + call + " was removed";
+                return "command " + FloppaTomlConfig.prefix + call + " was removed";
             } else {
-                return "command " + CoffeeFloppa.prefix + call + " wasn't found";
+                return "command " + FloppaTomlConfig.prefix + call + " wasn't found";
             }
         } else {
             return "Sorry, but you dont have the required permissions";

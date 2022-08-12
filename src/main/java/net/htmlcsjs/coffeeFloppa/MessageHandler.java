@@ -9,6 +9,7 @@ import discord4j.core.spec.MessageCreateMono;
 import discord4j.discordjson.json.EmojiData;
 import discord4j.rest.util.AllowedMentions;
 import net.htmlcsjs.coffeeFloppa.commands.ICommand;
+import net.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
 
@@ -28,41 +29,42 @@ public class MessageHandler {
             return Mono.empty();
         }
         String msgContent = message.getContent();
+        Mono<Object> amongVal = Mono.empty();
+
+        // If the first char is the prefix
+        if (msgContent.charAt(0) == FloppaTomlConfig.prefix.charAt(0) && !message.getAuthor().get().isBot() && !message.mentionsEveryone()) {
+            try {
+                // get the command
+                String commandCall = msgContent.toLowerCase().split(" ")[0].replace(FloppaTomlConfig.prefix, " ").strip();
+                ICommand command = commands.get(commandCall);
+
+                // we do a little bit of executing
+                Mono<Object> builtMessage = sendMessage(message, command);
+                if (builtMessage != null) amongVal = builtMessage;
+            } catch (IndexOutOfBoundsException ignored) {}
+        } else {
+            for (String key : searchCommands.keySet()) {
+                String prefix = key.split(" ")[0];
+                String terminator = key.split(" ")[1];
+                if (msgContent.contains(prefix) && msgContent.contains(terminator) && msgContent.indexOf(prefix) < msgContent.indexOf(terminator) && !message.getAuthor().get().isBot() && !message.mentionsEveryone()) {
+                    ICommand command = searchCommands.get(key);
+                    Mono<Object> builtMessage = sendMessage(message, command);
+                    if (builtMessage != null) amongVal = builtMessage;
+                }
+            }
+        }
+
         // flop
-        if (String.join("", msgContent.toLowerCase().split(" ")).contains((String) CoffeeFloppa.emoteData.get("phrase"))) {
+        if (String.join("", msgContent.toLowerCase().split(" ")).contains(FloppaTomlConfig.emotePhrase)) {
             EmojiData emojiData = CoffeeFloppa.client.getGuildEmojiById(
-                    Snowflake.of((String) CoffeeFloppa.emoteData.get("guild")),
-                    Snowflake.of((String) CoffeeFloppa.emoteData.get("emote"))).getData().block();
+                    Snowflake.of(FloppaTomlConfig.emoteGuild),
+                    Snowflake.of(FloppaTomlConfig.emoteID)).getData().block();
             if (emojiData != null) {
                 message.addReaction(ReactionEmoji.of(emojiData)).subscribe();
                 CoffeeFloppa.increaseFlopCount();
             }
         }
-
-        // If the first char is the prefix
-        try {
-            if (msgContent.charAt(0) == CoffeeFloppa.prefix && !message.getAuthor().get().isBot() && !message.mentionsEveryone()) {
-
-                // get the command
-                String commandCall = msgContent.toLowerCase().split(" ")[0].replace(String.valueOf(CoffeeFloppa.prefix), " ").strip();
-                ICommand command = commands.get(commandCall);
-
-                // we do a little bit of executing
-                Mono<Object> builtMessage = sendMessage(message, command);
-                if (builtMessage != null) return builtMessage;
-            }
-        } catch (IndexOutOfBoundsException ignored) {}
-
-        for (String key : searchCommands.keySet()) {
-            String prefix = key.split(" ")[0];
-            String terminator = key.split(" ")[1];
-            if (msgContent.contains(prefix) && msgContent.contains(terminator) && msgContent.indexOf(prefix) < msgContent.indexOf(terminator) && !message.getAuthor().get().isBot() && !message.mentionsEveryone()) {
-                ICommand command = searchCommands.get(key);
-                Mono<Object> builtMessage = sendMessage(message, command);
-                if (builtMessage != null) return builtMessage;
-            }
-        }
-        return Mono.empty();
+        return amongVal;
     }
 
     @Nullable

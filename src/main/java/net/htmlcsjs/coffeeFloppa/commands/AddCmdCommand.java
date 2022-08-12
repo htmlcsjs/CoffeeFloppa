@@ -4,6 +4,7 @@ import discord4j.core.object.entity.Message;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
+import net.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -56,9 +57,9 @@ public class AddCmdCommand implements ICommand {
             jsonData.put("commands", newCommands);
             CoffeeFloppa.updateConfigFile(jsonData);
             if (exists) {
-                return "command " + CoffeeFloppa.prefix + call + " was edited";
+                return "command " + FloppaTomlConfig.prefix + call + " was edited";
             } else {
-                return "command " + CoffeeFloppa.prefix + call + " was added";
+                return "command " + FloppaTomlConfig.prefix + call + " was added";
             }
         } else {
             FloppaLogger.logger.warn(message.getAuthor().get().getTag() + " is being very naughty");

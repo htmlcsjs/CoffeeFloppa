@@ -81,7 +81,7 @@ public class QuestAdminCommand implements ICommand{
                 } catch (Exception e) {
                     return "```" + e.getMessage() + "```";
                 }
-                CoffeeFloppa.refreshConfig();
+                CoffeeFloppa.refreshData();
                 FloppaLogger.logger.info(String.format("Updated Questbook %s", questBook));
                 return String.format("Updated Questbook %s", questBook);
             } else {

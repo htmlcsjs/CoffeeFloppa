@@ -1,8 +1,8 @@
 package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.core.object.entity.Message;
-import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.MessageHandler;
+import net.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,7 +43,7 @@ public class HelpCommand implements ICommand {
         } catch (Exception ignored) {
         }
 
-        return String.format("Page %d of %.0f\n\nCommand prefix is %c\nCommands available:```lua\n", page, pages, CoffeeFloppa.prefix) +
+        return String.format("Page %d of %.0f\n\nCommand prefix is %s\nCommands available:```lua\n", page, pages, FloppaTomlConfig.prefix) +
                     sortedCommandStream.stream()
                         .skip((long) (page - 1) * commandsPerPage)
                         .limit(commandsPerPage)
@@ -57,7 +57,7 @@ public class HelpCommand implements ICommand {
 
     protected String commandProcessor(Map.Entry<String, ICommand> entry) {
         if (!(entry.getValue() instanceof CustomCommand)) {
-            return String.format("%c%s: %s\n", CoffeeFloppa.prefix, entry.getKey(), entry.getValue().helpInfo());
+            return String.format("%s%s: %s\n", FloppaTomlConfig.prefix, entry.getKey(), entry.getValue().helpInfo());
         } else {
             return null;
         }
