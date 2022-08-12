@@ -49,7 +49,7 @@ public class CoffeeFloppa {
         refreshData();
 
 
-        client = DiscordClient.create(Files.readString(Path.of("token")));
+        client = DiscordClient.create(Files.readString(Path.of("token")).strip());
         randomGen = new Random();
 
         // Generate inital commands
