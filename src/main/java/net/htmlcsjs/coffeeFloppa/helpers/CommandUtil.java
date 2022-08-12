@@ -3,8 +3,8 @@ package net.htmlcsjs.coffeeFloppa.helpers;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.rest.util.Color;
-import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
+import net.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
@@ -31,13 +31,15 @@ public class CommandUtil {
         } catch (NullPointerException ignored) {
             return false;
         }
-        for (String str : CoffeeFloppa.adminRolesByGuild.values()) {
+        for (String str : FloppaTomlConfig.adminRoles) {
             if (userRoleIDs.contains(Snowflake.of(str))) {
                 return true;
             }
         }
-        if (message.getAuthor().get().getId().equals(CoffeeFloppa.admin)) {
-            return true;
+        for (String str : FloppaTomlConfig.adminUsers) {
+            if (message.getAuthor().get().getId().equals(Snowflake.of(str))) {
+                return true;
+            }
         }
         FloppaLogger.logger.warn(message.getAuthor().get().getTag() + " is being very naughty");
         return false;

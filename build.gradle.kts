@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "net.htmlcsjs"
-version = "0.2.1"
+version = "0.3.0"
 var projectBaseName = "CoffeeFloppa"
 var mainClass = "net.htmlcsjs.coffeeFloppa.CoffeeFloppa"
 
@@ -35,8 +35,14 @@ dependencies {
     implementation("org.luaj:luaj-jse:3.0.1")
     implementation("org.jetbrains:annotations:23.0.0")
     implementation("curse.maven:gtceu-557242:3808907")
+    implementation("org.reflections:reflections:0.10.2")
+    implementation("org.apache.commons:commons-text:1.9")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
+}
+
+tasks.create<Delete> ("deleteGeneratedSources") {
+    delete("$buildDir/sources/src/")
 }
 
 tasks.create<Copy> ("generateSource") {
@@ -44,8 +50,8 @@ tasks.create<Copy> ("generateSource") {
         filter(ReplaceTokens::class, "tokens" to mapOf("VERSION" to version, "GIT_VER" to grgit.head().id))
     }
     into("$buildDir/sources/src")
+    dependsOn("deleteGeneratedSources")
 }
-
 
 tasks {
     jar {

@@ -4,16 +4,13 @@ import discord4j.core.object.entity.Message;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
+import net.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 import org.jetbrains.annotations.NotNull;
-import org.json.simple.JSONObject;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.io.File;
+import java.io.FileOutputStream;
 
-@SuppressWarnings("unchecked")
 public class QuestAdminCommand implements ICommand{
     @Override
     public @NotNull String getName() {
@@ -34,9 +31,7 @@ public class QuestAdminCommand implements ICommand{
 
         if (verb.equalsIgnoreCase("add")) {
             if (isAdmin) {
-                JSONObject jsonData = CoffeeFloppa.getJsonData();
-                List<String> qbList = new ArrayList<>((List<String>) jsonData.getOrDefault("quest_books", Collections.emptyList()));
-                if (qbList.contains(questBook)) {
+                if (FloppaTomlConfig.questBooks.contains(questBook)) {
                     return "Use `update` instead of `add`";
                 }
                 if (questBook.equalsIgnoreCase("")) {
@@ -53,9 +48,8 @@ public class QuestAdminCommand implements ICommand{
                     return "```" + e.getMessage() + "```";
                 }
 
-                qbList.add(questBook);
-                jsonData.put("quest_books", qbList);
-                CoffeeFloppa.updateConfigFile(jsonData);
+                FloppaTomlConfig.questBooks.add(questBook);
+                CoffeeFloppa.refreshCommands();
                 FloppaLogger.logger.info(String.format("Added Questbook %s", questBook));
                 return String.format("Added Questbook %s", questBook);
             } else {
@@ -63,9 +57,7 @@ public class QuestAdminCommand implements ICommand{
             }
         } else if (verb.equalsIgnoreCase("update")) {
             if (isAdmin) {
-                JSONObject jsonData = CoffeeFloppa.getJsonData();
-                List<String> qbList = (List<String>) jsonData.getOrDefault("quest_books", Collections.emptyList());
-                if (!qbList.contains(questBook)) {
+                if (!FloppaTomlConfig.questBooks.contains(questBook)) {
                     return "Use `add` instead of `update`";
                 }
                 if (questBook.equalsIgnoreCase("")) {
@@ -81,7 +73,7 @@ public class QuestAdminCommand implements ICommand{
                 } catch (Exception e) {
                     return "```" + e.getMessage() + "```";
                 }
-                CoffeeFloppa.refreshConfig();
+                CoffeeFloppa.refreshData();
                 FloppaLogger.logger.info(String.format("Updated Questbook %s", questBook));
                 return String.format("Updated Questbook %s", questBook);
             } else {
@@ -89,9 +81,7 @@ public class QuestAdminCommand implements ICommand{
             }
         } else if (verb.equalsIgnoreCase("delete")) {
             if (isAdmin) {
-                JSONObject jsonData = CoffeeFloppa.getJsonData();
-                List<String> qbList = (List<String>) jsonData.getOrDefault("quest_books", Collections.emptyList());
-                if (!qbList.contains(questBook)) {
+                if (!FloppaTomlConfig.questBooks.contains(questBook)) {
                     return "Questbook not found";
                 }
                 if (questBook.equalsIgnoreCase("")) {
@@ -100,9 +90,8 @@ public class QuestAdminCommand implements ICommand{
                 try {
                     File qbFile = new File("qb/"+questBook+".json");
                     if (qbFile.delete()) {
-                        qbList.remove(questBook);
-                        jsonData.put("quest_books", qbList);
-                        CoffeeFloppa.updateConfigFile(jsonData);
+                        FloppaTomlConfig.questBooks.remove(questBook);
+                        CoffeeFloppa.refreshCommands();
                         FloppaLogger.logger.info(String.format("Deleted questbook %s", questBook));
                         return String.format("Deleted questbook %s", questBook);
                     } else {

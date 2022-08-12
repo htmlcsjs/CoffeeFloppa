@@ -38,7 +38,7 @@ public class MaterialCommandsHelper {
 
             line = reader.readLine();
         }
-        FloppaLogger.logger.info(materialLang.get("Lang Loaded"));
+        FloppaLogger.logger.info("Lang loaded");
     }
 
     public static List<EmbedCreateSpec> parseMaterialEmbed(Map<String, Object> materialInfo) {

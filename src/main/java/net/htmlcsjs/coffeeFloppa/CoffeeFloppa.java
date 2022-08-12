@@ -1,6 +1,5 @@
 package net.htmlcsjs.coffeeFloppa;
 
-import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
@@ -12,6 +11,8 @@ import net.htmlcsjs.coffeeFloppa.commands.*;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import net.htmlcsjs.coffeeFloppa.helpers.MaterialCommandsHelper;
 import net.htmlcsjs.coffeeFloppa.helpers.lua.LuaHelper;
+import net.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
+import net.htmlcsjs.coffeeFloppa.toml.TomlAnnotationProcessor;
 import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -22,38 +23,37 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class CoffeeFloppa {
     public static Random randomGen;
     public static DiscordClient client;
-    public static char prefix;
-    public static Map<String, String> adminRolesByGuild;
-    public static Snowflake admin;
-    public static Map<String, Object> emoteData;
     public static String deletionEmote = "\uD83D\uDDD1️";
     public static String version = "@VERSION@";
     public static String gitRef = "@GIT_VER@";
 
     private static JSONObject jsonData;
 
-    public static void main(String[] args) throws URISyntaxException, IOException {
+    public static void main(String[] args) throws IOException {
         // Init stuff
         FloppaLogger.init();
-        refreshConfig();
-        client = DiscordClient.create((String) jsonData.get("token"));
-        admin = Snowflake.of((String) jsonData.get("admin"));
+        FloppaLogger.logger.info("Staring initial config sync");
+        TomlAnnotationProcessor.loadConfigs();
+        TomlAnnotationProcessor.saveConfigs();
+        FloppaLogger.logger.info("initial Configs synced!");
+        refreshData();
+
+
+        client = DiscordClient.create(Files.readString(Path.of("token")));
         randomGen = new Random();
-        prefix = ((String) jsonData.get("prefix")).charAt(0);
 
         // Generate inital commands
         refreshCommands();
-
-        // Get adminRolesByGuild;
-        adminRolesByGuild = (Map<String, String>) jsonData.get("guilds");
 
         // Load lang for materials
         try (FileReader reader = new FileReader("materials.lang")) {
@@ -117,6 +117,7 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new StoikCommand());
         MessageHandler.addCommand(new VersionCommand());
         MessageHandler.addCommand(new OcCommand());
+        MessageHandler.addCommand(new EvalCommand());
         MessageHandler.addCommand(new HelpCommand(75) {
             @Override
             public @NotNull String getName() {
@@ -124,14 +125,18 @@ public class CoffeeFloppa {
             }
             @Override
             protected String commandProcessor(Map.Entry<String, ICommand> entry) {
-                return String.format("%c%s, ", CoffeeFloppa.prefix, entry.getKey());
+                return String.format("%s%s, ", FloppaTomlConfig.prefix, entry.getKey());
             }
         });
 
-        if ((boolean) jsonData.getOrDefault("evalEnabled", false)) {
-            MessageHandler.addCommand(new EvalCommand());
+        for (String name : MessageHandler.getCommands().keySet()) {
+            Class<? extends ICommand> commandClass = MessageHandler.getCommands().get(name).getClass();
+            if (FloppaTomlConfig.disabledCommands.contains(commandClass.getName().replace(commandClass.getPackageName() + ".", ""))) {
+                MessageHandler.getCommands().remove(name);
+            }
         }
-        for (String name: (List<String>) jsonData.getOrDefault("quest_books", Collections.EMPTY_LIST)) {
+
+        for (String name : FloppaTomlConfig.questBooks) {
             MessageHandler.addCommand(new QuestbookCommand(name));
         }
 
@@ -147,24 +152,26 @@ public class CoffeeFloppa {
         MessageHandler.addSearchCommand(new SearchCurseCommand());
     }
 
-    public static void refreshConfig() {
+    public static void refreshData() {
         try {
+            syncConfigs();
             jsonData = (JSONObject) new JSONParser().parse(new FileReader("config.json"));
+
             MessageHandler.clearCommands();
             MessageHandler.clearSearchCommands();
             refreshCommands();
+
             LuaHelper.initLuaServer();
-            Map<String, Object> defaultEmoteData = new HashMap<>();
-            defaultEmoteData.put("guild", "664888369087512601");
-            defaultEmoteData.put("emote", "853358698964713523");
-            defaultEmoteData.put("phrase", "flop");
-            if (!jsonData.containsKey("flop_emote_data")) {
-                jsonData.put("flop_emote_data", defaultEmoteData);
-            }
-            emoteData = (Map<String, Object>) jsonData.get("flop_emote_data");
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static void syncConfigs() {
+        FloppaLogger.logger.info("Staring config sync");
+        TomlAnnotationProcessor.saveConfigs();
+        TomlAnnotationProcessor.loadConfigs();
+        FloppaLogger.logger.info("Configs synced!");
     }
 
     public static JSONObject getJsonData() {
@@ -179,17 +186,15 @@ public class CoffeeFloppa {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        refreshConfig();
+        refreshData();
     }
 
     public static void increaseFlopCount() {
-        JSONObject newJsonData = CoffeeFloppa.getJsonData();
-        long flopCount = (long) newJsonData.get("flop");
-        newJsonData.put("flop", ++flopCount);
-        updateConfigFile(newJsonData);
+        FloppaTomlConfig.emoteCount++;
+        syncConfigs();
     }
 
-    private static String formatJSONStr(String jsonString, int indent_width) {
+    public static String formatJSONStr(String jsonString, int indent_width) {
         StringBuilder returnBuilder = new StringBuilder();
         boolean inQuotes = false;
         int indent = 0;
