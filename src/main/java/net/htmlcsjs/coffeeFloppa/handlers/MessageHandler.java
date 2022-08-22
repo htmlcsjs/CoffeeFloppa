@@ -1,6 +1,7 @@
-package net.htmlcsjs.coffeeFloppa;
+package net.htmlcsjs.coffeeFloppa.handlers;
 
 import discord4j.common.util.Snowflake;
+import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
@@ -8,6 +9,7 @@ import discord4j.core.spec.MessageCreateFields;
 import discord4j.core.spec.MessageCreateMono;
 import discord4j.discordjson.json.EmojiData;
 import discord4j.rest.util.AllowedMentions;
+import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.commands.ICommand;
 import net.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 import org.jetbrains.annotations.Nullable;
@@ -24,7 +26,8 @@ public class MessageHandler {
 
     private static final Map<String, ICommand> searchCommands = new HashMap<>();
 
-    public static Mono<Object> normal(Message message) {
+    public static Mono<Object> normal(MessageCreateEvent event) {
+        Message message = event.getMessage();
         if (message == null) {
             return Mono.empty();
         }

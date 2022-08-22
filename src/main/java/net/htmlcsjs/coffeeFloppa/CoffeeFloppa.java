@@ -5,9 +5,10 @@ import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.ReactionAddEvent;
-import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import net.htmlcsjs.coffeeFloppa.commands.*;
+import net.htmlcsjs.coffeeFloppa.handlers.MessageHandler;
+import net.htmlcsjs.coffeeFloppa.handlers.ReactionHandler;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import net.htmlcsjs.coffeeFloppa.helpers.MaterialCommandsHelper;
 import net.htmlcsjs.coffeeFloppa.helpers.lua.LuaHelper;
@@ -27,12 +28,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class CoffeeFloppa {
     public static Random randomGen;
     public static DiscordClient client;
+    public static User self;
     public static String deletionEmote = "\uD83D\uDDD1️";
     public static String version = "@VERSION@";
     public static String gitRef = "@GIT_VER@";
@@ -66,34 +66,15 @@ public class CoffeeFloppa {
             // Login message
             Mono<Void> printOnLogin = gateway.on(ReadyEvent.class, event ->
                     Mono.fromRunnable(() -> {
-                        final User self = event.getSelf();
+                        self = event.getSelf();
                         FloppaLogger.logger.info("Logged in as " +  self.getUsername() + "#" + self.getDiscriminator());
                     }))
                     .then();
 
             // Message handling
-            Mono<Void> handleCommand = gateway.on(MessageCreateEvent.class, event -> {
-                Message message = event.getMessage();
-                return MessageHandler.normal(message);
-            }).doOnError(System.out::println).then();
+            Mono<Void> handleCommand = gateway.on(MessageCreateEvent.class, MessageHandler::normal).doOnError(System.out::println).then();
 
-            Mono<Void> handleReaction = gateway.on(ReactionAddEvent.class, event -> {
-                Message message = event.getMessage().block();
-                if (message == null || !message.getAuthor().equals(gateway.getSelf().blockOptional())) {
-                    return Mono.empty();
-                }
-                AtomicReference<String> emojiValue = new AtomicReference<>("");
-                AtomicBoolean yeet = new AtomicBoolean(false);
-
-                event.getEmoji().asUnicodeEmoji().ifPresent(emoteUnicode -> emojiValue.set(emoteUnicode.getRaw()));
-                if (emojiValue.get().equals(deletionEmote)) {
-                    message.getReferencedMessage().ifPresent(referencedMessage -> yeet.set(referencedMessage.getAuthor().equals(event.getMember())));
-                    if (yeet.get()) {
-                        return message.delete();
-                    }
-                }
-                return Mono.empty();
-            }).doOnError(System.out::println).then();
+            Mono<Void> handleReaction = gateway.on(ReactionAddEvent.class, ReactionHandler::main).doOnError(System.out::println).then();
 
             // we do a little combining
             return printOnLogin.and(handleCommand).and(handleReaction).doOnError(System.out::println);

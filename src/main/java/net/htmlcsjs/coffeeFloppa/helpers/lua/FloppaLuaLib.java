@@ -12,7 +12,7 @@ import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Color;
 import discord4j.rest.util.Image;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
-import net.htmlcsjs.coffeeFloppa.MessageHandler;
+import net.htmlcsjs.coffeeFloppa.handlers.MessageHandler;
 import net.htmlcsjs.coffeeFloppa.commands.CustomCommand;
 import net.htmlcsjs.coffeeFloppa.commands.ICommand;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
