@@ -141,6 +141,7 @@ public class CoffeeFloppa {
             MessageHandler.clearCommands();
             MessageHandler.clearSearchCommands();
             refreshCommands();
+            ReactionHandler.initRoleSelectionDataList();
 
             LuaHelper.initLuaServer();
         } catch (Exception e) {
