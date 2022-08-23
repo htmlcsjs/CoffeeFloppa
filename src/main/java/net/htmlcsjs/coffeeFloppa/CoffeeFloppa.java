@@ -108,6 +108,7 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new VersionCommand());
         MessageHandler.addCommand(new OcCommand());
         MessageHandler.addCommand(new EvalCommand());
+        MessageHandler.addCommand(new RoleSelectorAdminCommand());
         MessageHandler.addCommand(new HelpCommand(75) {
             @Override
             public @NotNull String getName() {

@@ -6,7 +6,6 @@ import discord4j.core.event.domain.message.ReactionRemoveEvent;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.discordjson.json.EmojiData;
 import net.htmlcsjs.coffeeFloppa.helpers.RoleSelectionData;
 import net.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 import reactor.core.publisher.Mono;
@@ -25,9 +24,10 @@ public class ReactionHandler {
     private static final Map<String, RoleSelectionData> roleSelectors = new TreeMap<>();
     public static Mono<?> addition(ReactionAddEvent event) {
         Message message = event.getMessage().block();
-        if (message == null) {
+        if (message == null || event.getMember().isEmpty() || event.getMember().get().isBot()) {
             return Mono.empty();
         }
+
         AtomicReference<String> emojiValue = new AtomicReference<>("");
         AtomicBoolean yeet = new AtomicBoolean(false);
         AtomicBoolean delMessage = new AtomicBoolean(false);
@@ -41,16 +41,14 @@ public class ReactionHandler {
             }
         }
 
-        if (roleSelectors.containsKey(String.format("%s@%s", message.getId().asString(), message.getChannelId().asString()))) {
+        if (roleSelectors.containsKey(String.format("%s@%s", message.getId().asString(), message.getChannelId().asString())) && event.getEmoji().asCustomEmoji().isPresent()) {
             RoleSelectionData rsData = roleSelectors.get(String.format("%s@%s", message.getId().asString(), message.getChannelId().asString()));
-            if (message.getGuildId().isEmpty() || rsData.guildID().equals(message.getGuildId().get().toString())) {
-                EmojiData emojiData = event.getEmoji().asEmojiData();
-                if (emojiData.name().isPresent()) {
-                    if (rsData.roleEmoteLinkage().containsKey(emojiData.name().get())) {
-                        Snowflake roleId = Snowflake.of(rsData.roleEmoteLinkage().get(emojiData.name().get()));
-                        if (event.getMember().isPresent()) {
-                            return event.getMember().get().addRole(roleId);
-                        }
+            if (message.getGuildId().isEmpty() || rsData.guildID().equals(message.getGuildId().get().asString())) {
+                Snowflake emojiId = event.getEmoji().asCustomEmoji().get().getId();
+                if (rsData.roleEmoteLinkage().containsKey(emojiId.asString())) {
+                    Snowflake roleId = Snowflake.of(rsData.roleEmoteLinkage().get(emojiId.asString()));
+                    if (event.getMember().isPresent()) {
+                        return event.getMember().get().addRole(roleId);
                     }
                 }
             }
@@ -64,19 +62,17 @@ public class ReactionHandler {
             return Mono.empty();
         }
 
-        if (roleSelectors.containsKey(String.format("%s@%s", message.getId().asString(), message.getChannelId().asString()))) {
+        if (roleSelectors.containsKey(String.format("%s@%s", message.getId().asString(), message.getChannelId().asString())) && event.getEmoji().asCustomEmoji().isPresent()) {
             RoleSelectionData rsData = roleSelectors.get(String.format("%s@%s", message.getId().asString(), message.getChannelId().asString()));
-            if (message.getGuildId().isEmpty() || rsData.guildID().equals(message.getGuildId().get().toString())) {
-                EmojiData emojiData = event.getEmoji().asEmojiData();
-                if (emojiData.name().isPresent()) {
-                    if (rsData.roleEmoteLinkage().containsKey(emojiData.name().get())) {
-                        Snowflake roleId = Snowflake.of(rsData.roleEmoteLinkage().get(emojiData.name().get()));
-                        Guild guild = event.getGuild().block();
-                        if (guild != null) {
-                            Member member = guild.getMemberById(event.getUserId()).block();
-                            if (member != null) {
-                                return member.removeRole(roleId);
-                            }
+            if (message.getGuildId().isEmpty() || rsData.guildID().equals(message.getGuildId().get().asString())) {
+                Snowflake emojiId = event.getEmoji().asCustomEmoji().get().getId();
+                if (rsData.roleEmoteLinkage().containsKey(emojiId.asString())) {
+                    Snowflake roleId = Snowflake.of(rsData.roleEmoteLinkage().get(emojiId.asString()));
+                    Guild guild = event.getGuild().block();
+                    if (guild != null) {
+                        Member member = guild.getMemberById(event.getUserId()).block();
+                        if (member != null) {
+                            return member.removeRole(roleId);
                         }
                     }
                 }
