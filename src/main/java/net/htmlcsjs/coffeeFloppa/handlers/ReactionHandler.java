@@ -1,12 +1,16 @@
 package net.htmlcsjs.coffeeFloppa.handlers;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.object.entity.Message;
+import discord4j.discordjson.json.EmojiData;
 import net.htmlcsjs.coffeeFloppa.helpers.RoleSelectionData;
 import net.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -15,7 +19,7 @@ import static net.htmlcsjs.coffeeFloppa.CoffeeFloppa.self;
 
 public class ReactionHandler {
 
-    private static Map<String, RoleSelectionData> roleSelectionDataList = new TreeMap<>();
+    private static final Map<String, RoleSelectionData> roleSelectors = new TreeMap<>();
     public static Mono<?> main(ReactionAddEvent event) {
         Message message = event.getMessage().block();
         if (message == null) {
@@ -33,11 +37,26 @@ public class ReactionHandler {
                 return message.delete();
             }
         }
+
+        if (roleSelectors.containsKey(String.format("%s@%s", message.getId().asString(), message.getChannelId().asString()))) {
+            RoleSelectionData rsData = roleSelectors.get(String.format("%s@%s", message.getId().asString(), message.getChannelId().asString()));
+            if (message.getGuildId().isEmpty() || rsData.guildID().equals(message.getGuildId().get().toString())) {
+                EmojiData emojiData = event.getEmoji().asEmojiData();
+                if (emojiData.name().isPresent()) {
+                    if (rsData.roleEmoteLinkage().containsKey(emojiData.name().get())) {
+                        Snowflake roleId = Snowflake.of(rsData.roleEmoteLinkage().get(emojiData.name().get()));
+                        if (event.getMember().isPresent()) {
+                            return event.getMember().get().addRole(roleId, String.format("added from role selection %s@%s@%s", rsData.messageID(), rsData.channelID(), rsData.guildID()));
+                        }
+                    }
+                }
+            }
+        }
         return Mono.empty();
     }
 
     public static void initRoleSelectionDataList() {
-        roleSelectionDataList.clear();
+        roleSelectors.clear();
         for (String emoteInfo : FloppaTomlConfig.roleSelectors) {
             String[] msgDataSplit = emoteInfo.split("@");
             String messageId = msgDataSplit[0];
@@ -47,7 +66,7 @@ public class ReactionHandler {
             for (String i : emoteInfo.substring(messageId.length() + channelId.length() + guildId.length() + 3).split(";")) {
                 roleEmoteLinkage.put(i.split("#")[1], i.split("#")[0]);
             }
-            roleSelectionDataList.put(messageId, new RoleSelectionData(messageId, channelId, guildId, roleEmoteLinkage));
+            roleSelectors.put(String.format("%s@%s", messageId, channelId), new RoleSelectionData(messageId, channelId, guildId, roleEmoteLinkage));
         }
     }
 }

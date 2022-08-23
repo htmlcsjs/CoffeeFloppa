@@ -72,12 +72,14 @@ public class CoffeeFloppa {
                     .then();
 
             // Message handling
-            Mono<Void> handleCommand = gateway.on(MessageCreateEvent.class, MessageHandler::normal).doOnError(System.out::println).then();
+            Mono<Void> handleCommand = gateway.on(MessageCreateEvent.class, MessageHandler::normal).then();
 
-            Mono<Void> handleReaction = gateway.on(ReactionAddEvent.class, ReactionHandler::main).doOnError(System.out::println).then();
+            Mono<Void> handleReaction = gateway.on(ReactionAddEvent.class, ReactionHandler::main).then();
 
             // we do a little combining
-            return printOnLogin.and(handleCommand).and(handleReaction).doOnError(System.out::println);
+            return printOnLogin.and(handleCommand).and(handleReaction).doOnError(error ->
+                FloppaLogger.logger.info(CommandUtil.getStackTraceToString((Exception) error))
+            );
         });
 
         login.block();
