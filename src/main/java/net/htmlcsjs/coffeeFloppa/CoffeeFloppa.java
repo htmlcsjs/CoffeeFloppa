@@ -5,6 +5,7 @@ import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.ReactionAddEvent;
+import discord4j.core.event.domain.message.ReactionRemoveEvent;
 import discord4j.core.object.entity.User;
 import net.htmlcsjs.coffeeFloppa.commands.*;
 import net.htmlcsjs.coffeeFloppa.handlers.MessageHandler;
@@ -74,12 +75,18 @@ public class CoffeeFloppa {
             // Message handling
             Mono<Void> handleCommand = gateway.on(MessageCreateEvent.class, MessageHandler::normal).then();
 
-            Mono<Void> handleReaction = gateway.on(ReactionAddEvent.class, ReactionHandler::main).then();
+            // Reaction Handling
+            Mono<Void> handleReactionAddition = gateway.on(ReactionAddEvent.class, ReactionHandler::addition).then();
+            Mono<Void> handleReactionDeletion = gateway.on(ReactionRemoveEvent.class, ReactionHandler::deletion).then();
 
             // we do a little combining
-            return printOnLogin.and(handleCommand).and(handleReaction).doOnError(error ->
-                FloppaLogger.logger.info(CommandUtil.getStackTraceToString((Exception) error))
-            );
+            return printOnLogin
+                    .and(handleCommand)
+                    .and(handleReactionAddition)
+                    .and(handleReactionDeletion)
+                    .doOnError(error ->
+                        FloppaLogger.logger.info(CommandUtil.getStackTraceToString((Exception) error))
+                    );
         });
 
         login.block();
