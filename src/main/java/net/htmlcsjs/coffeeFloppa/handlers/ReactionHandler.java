@@ -95,4 +95,8 @@ public class ReactionHandler {
             roleSelectors.put(String.format("%s@%s", messageId, channelId), new RoleSelectionData(messageId, channelId, guildId, roleEmoteLinkage));
         }
     }
+
+    public static Map<String, RoleSelectionData> getRoleSelectors() {
+        return roleSelectors;
+    }
 }
