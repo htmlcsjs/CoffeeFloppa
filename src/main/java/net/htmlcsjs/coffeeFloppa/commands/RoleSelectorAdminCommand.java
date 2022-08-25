@@ -125,8 +125,45 @@ public class RoleSelectorAdminCommand implements ICommand {
 
                 return null;
             }
+            case "del" -> {
+                if (message.getMessageReference().isEmpty() || message.getMessageReference().get().getMessageId().isEmpty()) {
+                    return "ERROR: Not referncing a message";
+                }
+                MessageChannel channel = message.getChannel().block();
+                if (channel == null) {
+                    return "ERROR: Channel is null";
+                }
+                Message refMessage = channel.getMessageById(message.getMessageReference().get().getMessageId().get()).block();
+                if (refMessage == null) {
+                    return "ERROR: Referenced message is null";
+                }
+                Guild guild = message.getGuild().block();
+                if (guild == null) {
+                    return "ERROR: Guild is null";
+                }
+
+                String refIdentifier = String.format("%s@%s", refMessage.getId().asString(), refMessage.getChannelId().asString());
+                if (!ReactionHandler.getRoleSelectors().containsKey(refIdentifier) || refMessage.getAuthor().isEmpty() || !refMessage.getAuthor().get().getId().equals(CoffeeFloppa.self.getId())) {
+                    return "Referenced message isn't a role selector";
+                }
+                int index = -1;
+                for (int i = 0; i < FloppaTomlConfig.roleSelectors.size(); i++) {
+                    if (FloppaTomlConfig.roleSelectors.get(i).startsWith(refIdentifier)) {
+                        index = i;
+                        break;
+                    }
+                }
+                if (index < 0) {
+                    return "Failed to find the index of that selector";
+                }
+                refMessage.delete("mogus").subscribe();
+                String returnStr = "Deleted role selector `" + FloppaTomlConfig.roleSelectors.get(index) + "`";
+                FloppaTomlConfig.roleSelectors.remove(index);
+                CoffeeFloppa.refreshData();
+                return returnStr;
+            }
             default -> {
-                return "Unrecognised verb";
+                return "Unrecognised verb; Verbs are:";
             }
         }
     }
