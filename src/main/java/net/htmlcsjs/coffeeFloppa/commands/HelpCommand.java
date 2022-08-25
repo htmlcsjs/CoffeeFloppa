@@ -1,7 +1,7 @@
 package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.core.object.entity.Message;
-import net.htmlcsjs.coffeeFloppa.MessageHandler;
+import net.htmlcsjs.coffeeFloppa.handlers.MessageHandler;
 import net.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

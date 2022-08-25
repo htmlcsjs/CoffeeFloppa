@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "net.htmlcsjs"
-version = "0.3.0"
+version = "0.4.0"
 var projectBaseName = "CoffeeFloppa"
 var mainClass = "net.htmlcsjs.coffeeFloppa.CoffeeFloppa"
 
@@ -28,7 +28,7 @@ application {
 }
 
 dependencies {
-    implementation("com.discord4j:discord4j-core:3.2.2")
+    implementation("com.discord4j:discord4j-core:3.2.3")
     implementation("ch.qos.logback:logback-classic:1.2.11")
     implementation("com.googlecode.json-simple:json-simple:1.1.1")
     implementation("me.xdrop:fuzzywuzzy:1.4.0")
@@ -38,7 +38,7 @@ dependencies {
     implementation("org.reflections:reflections:0.10.2")
     implementation("org.apache.commons:commons-text:1.9")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
 }
 
 tasks.create<Delete> ("deleteGeneratedSources") {

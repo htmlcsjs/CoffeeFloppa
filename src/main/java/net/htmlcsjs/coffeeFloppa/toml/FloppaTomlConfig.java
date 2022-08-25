@@ -31,4 +31,7 @@ public class FloppaTomlConfig {
     @TomlConfig.ConfigElement(location = "quest_books")
     public static List<String> questBooks;
 
+    @TomlConfig.ConfigElement(location = "role_selectors")
+    public static List<String> roleSelectors;
+
 }
