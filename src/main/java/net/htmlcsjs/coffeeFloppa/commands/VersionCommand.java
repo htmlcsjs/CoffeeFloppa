@@ -27,7 +27,7 @@ public class VersionCommand implements ICommand {
             String username = CoffeeFloppa.self.getUsername();
             botNickname = optionalNick.orElse(username);
         }
-        return String.format("%s is running version `%s`, built with commit `%s`", botNickname, CoffeeFloppa.version, CoffeeFloppa.gitRef);
+        return String.format("%s is running version `%s`, built with commit <https://github.com/htmlcsjs/CoffeeFloppa/commit/%s>", botNickname, CoffeeFloppa.version, CoffeeFloppa.gitRef);
     }
 
     @Override
