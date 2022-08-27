@@ -38,12 +38,20 @@ public class RoleSelectorAdminCommand implements ICommand {
                     if (guild != null) {
                         StringBuilder messageBuilder = new StringBuilder("React with:\n");
                         for (int i = 2; i < splitArg.length; i++) {
-                            String[] emoteStrSplit = splitArg[i].split("#");
+                            String[] emoteStrSplit = splitArg[i].replace("\\", "").split("#");
                             Role role = guild.getRoleById(Snowflake.of(emoteStrSplit[0])).block();
-                            if (role == null) {
-                                messageBuilder.append(String.format("<:howdidwegethere:%s> for role %s\n", emoteStrSplit[1], emoteStrSplit[0]));
+                            if (emoteStrSplit[1].matches("[\\d\\s]+")) {
+                                if (role == null) {
+                                    messageBuilder.append(String.format("<:howdidwegethere:%s> for role %s\n", emoteStrSplit[1], emoteStrSplit[0]));
+                                } else {
+                                    messageBuilder.append(String.format("<:howdidwegethere:%s> for role %s\n", emoteStrSplit[1], role.getMention()));
+                                }
                             } else {
-                                messageBuilder.append(String.format("<:howdidwegethere:%s> for role %s\n", emoteStrSplit[1], role.getMention()));
+                                if (role == null) {
+                                    messageBuilder.append(String.format("%s for role %s\n", emoteStrSplit[1], emoteStrSplit[0]));
+                                } else {
+                                    messageBuilder.append(String.format("%s for role %s\n", emoteStrSplit[1], role.getMention()));
+                                }
                             }
                         }
                         Message reactionMessage = message.getChannel().flatMap(messageChannel -> messageChannel.createMessage(EmbedCreateSpec.builder()
@@ -61,13 +69,18 @@ public class RoleSelectorAdminCommand implements ICommand {
                                 .append(";");
 
                         for (int i = 2; i < splitArg.length; i++) {
-                            String[] emoteStrSplit = splitArg[i].split("#");
-                            EmojiData emojiData = CoffeeFloppa.client.getGuildEmojiById(guild.getId(), Snowflake.of(emoteStrSplit[1])).getData().block();
-                            if (emojiData != null) {
-                                reactionMessage.addReaction(ReactionEmoji.of(emojiData)).subscribe();
+                            String[] emoteStrSplit = splitArg[i].replace("\\", "").split("#");
+                            if (emoteStrSplit[1].matches("\\d+")) {
+                                 EmojiData emojiData = CoffeeFloppa.client.getGuildEmojiById(guild.getId(), Snowflake.of(emoteStrSplit[1])).getData().block();
+                                if (emojiData != null) {
+                                    reactionMessage.addReaction(ReactionEmoji.of(emojiData)).subscribe();
+                                }
+                            } else {
+                                reactionMessage.addReaction(ReactionEmoji.unicode(emoteStrSplit[1])).subscribe();
                             }
+
                         }
-                        configDataBuilder.append(arg.replace(" ", ";"));
+                        configDataBuilder.append(arg.replace(" ", ";").replace("\\", ""));
                         FloppaTomlConfig.roleSelectors.add(configDataBuilder.toString());
                         CoffeeFloppa.refreshData();
                         return null;
@@ -97,13 +110,21 @@ public class RoleSelectorAdminCommand implements ICommand {
                         return "Referenced message isn't a role selector";
                     }
                     refMessage.getEmbeds().get(0).getDescription().ifPresent(desc -> {
-                        String[] emoteStrSplit = splitArg[2].split("#");
+                        String[] emoteStrSplit = splitArg[2].replace("\\", "").split("#");
                         Role role = guild.getRoleById(Snowflake.of(emoteStrSplit[0])).block();
                         String appendToDesc;
-                        if (role == null) {
-                            appendToDesc = String.format("<:howdidwegethere:%s> for role %s\n", emoteStrSplit[1], emoteStrSplit[0]);
+                        if (emoteStrSplit[1].matches("\\d+")) {
+                            if (role == null) {
+                                appendToDesc = String.format("<:howdidwegethere:%s> for role %s\n", emoteStrSplit[1], emoteStrSplit[0]);
+                            } else {
+                                appendToDesc = String.format("<:howdidwegethere:%s> for role %s\n", emoteStrSplit[1], role.getMention());
+                            }
                         } else {
-                            appendToDesc = String.format("<:howdidwegethere:%s> for role %s\n", emoteStrSplit[1], role.getMention());
+                            if (role == null) {
+                                appendToDesc = String.format("%s for role %s\n", emoteStrSplit[1], emoteStrSplit[0]);
+                            } else {
+                                appendToDesc = String.format("%s for role %s\n", emoteStrSplit[1], role.getMention());
+                            }
                         }
                         refMessage.edit(MessageEditSpec.builder()
                                 .addEmbed(EmbedCreateSpec.builder()
@@ -116,10 +137,14 @@ public class RoleSelectorAdminCommand implements ICommand {
                                 break;
                             }
                         }
-                        FloppaTomlConfig.roleSelectors.set(index, String.format("%s;%s", FloppaTomlConfig.roleSelectors.get(index), splitArg[2]));
-                        EmojiData emojiData = CoffeeFloppa.client.getGuildEmojiById(guild.getId(), Snowflake.of(emoteStrSplit[1])).getData().block();
-                        if (emojiData != null) {
-                            refMessage.addReaction(ReactionEmoji.of(emojiData)).subscribe();
+                        FloppaTomlConfig.roleSelectors.set(index, String.format("%s;%s", FloppaTomlConfig.roleSelectors.get(index), splitArg[2].replace("\\", "")));
+                        if (emoteStrSplit[1].matches("\\d+")) {
+                            EmojiData emojiData = CoffeeFloppa.client.getGuildEmojiById(guild.getId(), Snowflake.of(emoteStrSplit[1])).getData().block();
+                            if (emojiData != null) {
+                                refMessage.addReaction(ReactionEmoji.of(emojiData)).subscribe();
+                            }
+                        } else {
+                            refMessage.addReaction(ReactionEmoji.unicode(emoteStrSplit[1])).subscribe();
                         }
                         CoffeeFloppa.refreshData();
                     });
@@ -164,7 +189,7 @@ public class RoleSelectorAdminCommand implements ICommand {
                     return returnStr;
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (IndexOutOfBoundsException ignored) {}
         return """
                     Unrecognised verb; Verbs are:
                     - `new` - adds a new role selector, format `new role1id#emote1id role2id#emote2id ..`
