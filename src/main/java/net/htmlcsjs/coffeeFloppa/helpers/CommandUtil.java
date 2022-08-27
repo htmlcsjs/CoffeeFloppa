@@ -45,7 +45,7 @@ public class CommandUtil {
         return false;
     }
 
-    public static String getStackTraceToString(Exception e, int limit) {
+    public static String getStackTraceToString(Throwable e, int limit) {
         StringBuilder stackTrace = new StringBuilder();
         int i = 0;
         for (StackTraceElement ste : e.getStackTrace()) {
@@ -58,7 +58,7 @@ public class CommandUtil {
         return stackTrace.toString();
     }
 
-    public static String getStackTraceToString(Exception e) {
+    public static String getStackTraceToString(Throwable e) {
         return getStackTraceToString(e, e.getStackTrace().length);
     }
 

@@ -1,5 +1,6 @@
 package net.htmlcsjs.coffeeFloppa;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
@@ -7,6 +8,7 @@ import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.event.domain.message.ReactionRemoveEvent;
 import discord4j.core.object.entity.User;
+import discord4j.core.spec.EmbedCreateSpec;
 import net.htmlcsjs.coffeeFloppa.commands.*;
 import net.htmlcsjs.coffeeFloppa.handlers.MessageHandler;
 import net.htmlcsjs.coffeeFloppa.handlers.ReactionHandler;
@@ -21,14 +23,14 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import reactor.core.publisher.Mono;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class CoffeeFloppa {
     public static Random randomGen;
@@ -84,12 +86,42 @@ public class CoffeeFloppa {
                     .and(handleCommand)
                     .and(handleReactionAddition)
                     .and(handleReactionDeletion)
-                    .doOnError(error ->
-                        FloppaLogger.logger.info(CommandUtil.getStackTraceToString((Exception) error))
-                    );
+                    .doOnError(CoffeeFloppa::handleException);
         });
 
         login.block();
+    }
+
+    public static void handleException(Throwable throwable) {
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(stringWriter);
+        throwable.printStackTrace(printWriter);
+
+        EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder()
+                .addField("Error Type", String.format("`%s`", throwable.getClass().getName()), true)
+                .addField("Message", String.format("`%s`", throwable.getLocalizedMessage()), true);
+
+        if (throwable.getStackTrace().length > 0) {
+            try {
+                Class<?> commandClass = Class.forName(throwable.getStackTrace()[0].getClassName());
+                if (Arrays.asList(commandClass.getInterfaces()).contains(ICommand.class)) {
+                    Object name = commandClass.getMethod("getName").invoke(commandClass.getConstructor().newInstance());
+                    builder.addField("Command",  "`" + FloppaTomlConfig.prefix + name + "`", true);
+                } else {
+                    throw new RuntimeException("moger");
+                }
+            } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException |
+                     IllegalAccessException | RuntimeException | InstantiationException ignored) {
+                builder.addField("Erroring Class", "`" + throwable.getStackTrace()[0].getClassName() + "`", true);
+            }
+        }
+        builder.addField("Trace", "```java\n" +
+                Arrays.stream(throwable.getStackTrace()).limit(10).map(stackTraceElement ->
+                        "╠ " + stackTraceElement.getClassName() + ":" + stackTraceElement.getLineNumber())
+                        .collect(Collectors.joining("\n")) + "```", false);
+        client.getChannelById(Snowflake.of(FloppaTomlConfig.errorChannel))
+                .createMessage(builder.build().asRequest()).subscribe();
+        FloppaLogger.logger.error(stringWriter.toString());
     }
 
     public static void refreshCommands() {

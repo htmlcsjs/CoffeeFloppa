@@ -34,4 +34,6 @@ public class FloppaTomlConfig {
     @TomlConfig.ConfigElement(location = "role_selectors")
     public static List<String> roleSelectors;
 
+    @TomlConfig.ConfigElement(location = "error.channel")
+    public static String errorChannel;
 }

@@ -12,7 +12,7 @@ import discord4j.rest.util.AllowedMentions;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.commands.ICommand;
 import net.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
@@ -70,31 +70,34 @@ public class MessageHandler {
         return amongVal;
     }
 
-    @Nullable
-    public static Mono<Object> sendMessage(Message message, ICommand command, boolean withReference) {
-        if (command != null) {
-            message.getChannel().flatMap(MessageChannel::type).subscribe(); // set flop to writing
-            String commandMessage = command.execute(message);
-            if (commandMessage != null && commandMessage.length() <= 2000) {
-                return message.getChannel().flatMap(channel -> {
-                    MessageCreateMono msg = channel.createMessage(commandMessage)
-                            .withAllowedMentions(AllowedMentions.suppressEveryone());
-                    if (withReference) {
-                        msg = msg.withMessageReference(message.getId());
-                    }
-                    return msg;
-                });
-            } else if (commandMessage != null){
-                return message.getChannel().flatMap(channel -> {
-                    MessageCreateMono msg = channel.createMessage("Message content too large for msg, falling to an attachment")
-                            .withFiles(MessageCreateFields.File.of("msg.txt", new ByteArrayInputStream(commandMessage.getBytes(StandardCharsets.UTF_8))))
-                            .withAllowedMentions(AllowedMentions.suppressEveryone());
-                    if (withReference) {
-                        msg = msg.withMessageReference(message.getId());
-                    }
-                    return msg;
-                });
+    public static @NotNull Mono<Object> sendMessage(Message message, ICommand command, boolean withReference) {
+        try {
+            if (command != null) {
+                message.getChannel().flatMap(MessageChannel::type).subscribe(); // set flop to writing
+                String commandMessage = command.execute(message);
+                if (commandMessage != null && commandMessage.length() <= 2000) {
+                    return message.getChannel().flatMap(channel -> {
+                        MessageCreateMono msg = channel.createMessage(commandMessage)
+                                .withAllowedMentions(AllowedMentions.suppressEveryone());
+                        if (withReference) {
+                            msg = msg.withMessageReference(message.getId());
+                        }
+                        return msg;
+                    });
+                } else if (commandMessage != null) {
+                    return message.getChannel().flatMap(channel -> {
+                        MessageCreateMono msg = channel.createMessage("Message content too large for msg, falling to an attachment")
+                                .withFiles(MessageCreateFields.File.of("msg.txt", new ByteArrayInputStream(commandMessage.getBytes(StandardCharsets.UTF_8))))
+                                .withAllowedMentions(AllowedMentions.suppressEveryone());
+                        if (withReference) {
+                            msg = msg.withMessageReference(message.getId());
+                        }
+                        return msg;
+                    });
+                }
             }
+        } catch (Exception e) {
+            CoffeeFloppa.handleException(e);
         }
         return Mono.empty();
     }

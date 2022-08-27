@@ -2,6 +2,7 @@ package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
+import discord4j.discordjson.json.MemberData;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,11 +21,12 @@ public class VersionCommand implements ICommand {
     public String execute(Message message) {
         Snowflake guildId = message.getGuildId().isPresent() ? message.getGuildId().get() : Snowflake.of("701354865217110096");
         String botNickname = "this bot";
-        try {
-            Optional<String> optionalNick = CoffeeFloppa.client.getSelfMember(guildId).block().nick().get();
-            String username = CoffeeFloppa.client.getSelf().block().username();
+        MemberData selfMemberData = CoffeeFloppa.client.getSelfMember(guildId).block();
+        if (selfMemberData != null) {
+            Optional<String> optionalNick = selfMemberData.nick().get();
+            String username = CoffeeFloppa.self.getUsername();
             botNickname = optionalNick.orElse(username);
-        } catch (Exception ignored) {}
+        }
         return String.format("%s is running version `%s`, built with commit `%s`", botNickname, CoffeeFloppa.version, CoffeeFloppa.gitRef);
     }
 
