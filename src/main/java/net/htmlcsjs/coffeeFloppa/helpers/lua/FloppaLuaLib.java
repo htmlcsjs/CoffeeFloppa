@@ -278,6 +278,7 @@ public class FloppaLuaLib extends TwoArgFunction {
             if (msgCount >= MAX_SENT_MESSAGES) {
                 return FALSE;
             }
+            msgCount++;
             if (messageData.isstring()) {
                 ICommand funnyCommand = new CustomCommand("how are you here", Collections.singletonList(messageData.checkjstring()));
                 Mono<Object> messageSendMono = MessageHandler.sendMessage(message, funnyCommand, msgCount == 1);
@@ -388,7 +389,6 @@ public class FloppaLuaLib extends TwoArgFunction {
                     }
                     return Mono.empty();
                 }).subscribe();
-                msgCount++;
                 return TRUE;
             }
             return error("Message string nor table with message information supplied");
