@@ -5,6 +5,7 @@ import org.json.simple.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 @SuppressWarnings("unchecked")
 public class QuestDefinition {
@@ -13,6 +14,7 @@ public class QuestDefinition {
     private final String name;
     private String formatterFinisher = "";
     private final long id;
+    private static final Pattern pattern = Pattern.compile("§r(§[a-zA-Z0-9]) ", Pattern.MULTILINE);
 
     public QuestDefinition(JSONObject questData) {
         preRequisites = (List<Long>) questData.get("preRequisites:11");
@@ -23,29 +25,55 @@ public class QuestDefinition {
         String rawDesc = (String) deeperQuestData.get("desc:8");
         StringBuilder descBuilder = new StringBuilder();
         boolean nextIsFormatCode = false;
-
+        boolean bold = false;
+        boolean strikethrough = false;
+        boolean underline = false;
+        boolean italic = false;
+        rawDesc = pattern.matcher(rawDesc).replaceAll("§r $1");
         for (char ch: rawDesc.toCharArray()) {
             if (ch == '§') {
                 nextIsFormatCode = true;
             } else if (nextIsFormatCode) {
                 if (ch == 'l') {
-                    addFormatting("**", descBuilder);
+                    if (!bold) {
+                        addFormatting("**", descBuilder);
+                        bold = true;
+                    }
                 } else if (ch == 'm') {
-                    addFormatting("~~", descBuilder);
+                    if (!strikethrough) {
+                        addFormatting("~~", descBuilder);
+                        strikethrough = true;
+                    }
                 } else if (ch == 'n') {
-                    addFormatting("__", descBuilder);
+                    if (!underline) {
+                        addFormatting("__", descBuilder);
+                        underline = true;
+                    }
                 } else if (ch == 'o') {
-                    addFormatting("*", descBuilder);
+                    if (!italic) {
+                        addFormatting("*", descBuilder);
+                        italic = true;
+                    }
                 } else if (ch == 'r') {
                     descBuilder.append(formatterFinisher);
                     formatterFinisher = "";
+                    bold = false;
+                    strikethrough = false;
+                    underline = false;
+                    italic = false;
                 } else if ("0123456789abcdef".contains(String.valueOf(ch))) {
-                    addFormatting("**", descBuilder);
+                    if (!bold) {
+                        addFormatting("**", descBuilder);
+                        bold = true;
+                    }
                 }
                 nextIsFormatCode = false;
             } else {
                 descBuilder.append(ch);
             }
+        }
+        if (formatterFinisher.length() > 0) {
+            descBuilder.append(formatterFinisher);
         }
         description = descBuilder.toString();
     }
@@ -75,10 +103,8 @@ public class QuestDefinition {
         return id;
     }
 
-    private StringBuilder addFormatting(String formattingCode, StringBuilder builder) {
+    private void addFormatting(String formattingCode, StringBuilder builder) {
         builder.append(formattingCode);
         formatterFinisher += formattingCode;
-        return builder;
     }
-
 }
