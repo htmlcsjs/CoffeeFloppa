@@ -2,6 +2,7 @@ package net.htmlcsjs.coffeeFloppa.handlers;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.event.domain.message.MessageUpdateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
@@ -12,6 +13,7 @@ import discord4j.rest.util.AllowedMentions;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import net.htmlcsjs.coffeeFloppa.commands.ICommand;
 import net.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
+import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
@@ -28,10 +30,30 @@ public class MessageHandler {
 
     public static Mono<Object> normal(MessageCreateEvent event) {
         Message message = event.getMessage();
-        if (message == null) {
+        String msgContent = message.getContent();
+        return executeMessage(message, msgContent);
+    }
+
+    public static Mono<Object> edited(MessageUpdateEvent event) {
+        Message message = event.getMessage().block();
+        MessageChannel channel = event.getChannel().block();
+        if (message == null || channel == null || !messagesAndResponses.containsKey(message.getId())) {
             return Mono.empty();
         }
+        for (Snowflake sus: messagesAndResponses.get(message.getId())) {
+            Message mogMsg = channel.getMessageById(sus).block();
+            if (mogMsg == null) {
+                return Mono.empty();
+            }
+            mogMsg.delete().subscribe();
+        }
+        messagesAndResponses.get(message.getId()).clear();
         String msgContent = message.getContent();
+        return executeMessage(message, msgContent);
+    }
+
+    @NotNull
+    private static Mono<Object> executeMessage(Message message, String msgContent) {
         Mono<Object> amongVal = Mono.empty();
 
         // If the first char is the prefix
@@ -104,14 +126,14 @@ public class MessageHandler {
         }
         if (messagesAndResponses.containsKey(ref.getId())) {
             messagesAndResponses.get(ref.getId()).add(sent.getId());
-            if (messagesAndResponses.keySet().size() > 3) { // testing, increase to 100 or smth TODO
-                Optional<Snowflake> firstSnowflake = messagesAndResponses.keySet().stream().sorted().findFirst();
-                firstSnowflake.ifPresent(messagesAndResponses::remove);
-            }
         } else {
             List<Snowflake> multimogus = new ArrayList<>();
             multimogus.add(sent.getId());
             messagesAndResponses.put(ref.getId(), multimogus);
+        }
+        if (messagesAndResponses.keySet().size() > 100) {
+            Optional<Snowflake> firstSnowflake = messagesAndResponses.keySet().stream().sorted().findFirst();
+            firstSnowflake.ifPresent(messagesAndResponses::remove);
         }
         return false;
     }
