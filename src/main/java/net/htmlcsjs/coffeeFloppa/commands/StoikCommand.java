@@ -3,6 +3,7 @@ package net.htmlcsjs.coffeeFloppa.commands;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.AllowedMentions;
+import net.htmlcsjs.coffeeFloppa.handlers.MessageHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -97,14 +98,14 @@ public class StoikCommand implements ICommand {
             balancedMsg = "\u274C Your reaction is unbalanced \u274C";
         }
 
-        message.getChannel().flatMap(channel -> channel.createMessage().withEmbeds(
+        MessageHandler.sendRegisterMessage(message, message.getChannel().flatMap(channel -> channel.createMessage().withEmbeds(
                 EmbedCreateSpec.builder().addField("Reactants", reactantsStrBuilder.toString(), true)
                         .addField("Products", productsStrBuilder.toString(), true)
                         .addField("Balanced", clayStrBuilder.toString(), true)
                         .addField("Status", balancedMsg, false)
                         .build()
                 ).withMessageReference(message.getId())
-                .withAllowedMentions(AllowedMentions.suppressEveryone())).subscribe();
+                .withAllowedMentions(AllowedMentions.suppressEveryone())));
         return null;
 
     }

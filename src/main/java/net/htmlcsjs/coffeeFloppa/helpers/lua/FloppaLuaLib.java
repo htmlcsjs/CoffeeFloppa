@@ -13,8 +13,6 @@ import discord4j.rest.util.Color;
 import discord4j.rest.util.Image;
 import net.htmlcsjs.coffeeFloppa.FloppaLogger;
 import net.htmlcsjs.coffeeFloppa.handlers.MessageHandler;
-import net.htmlcsjs.coffeeFloppa.commands.CustomCommand;
-import net.htmlcsjs.coffeeFloppa.commands.ICommand;
 import net.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
@@ -27,7 +25,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -280,12 +277,9 @@ public class FloppaLuaLib extends TwoArgFunction {
             }
             msgCount++;
             if (messageData.isstring()) {
-                ICommand funnyCommand = new CustomCommand("how are you here", Collections.singletonList(messageData.checkjstring()));
-                Mono<Object> messageSendMono = MessageHandler.sendMessage(message, funnyCommand, msgCount == 1);
-                if (messageSendMono == null) {
-                    FloppaLogger.logger.error(String.format("message \"%s\" has caused %s to be null", messageData.checkjstring(), funnyCommand));
+                if (!MessageHandler.sendMessage(message, messageData.checkjstring(), msgCount == 1)) {
                     return error("Internal error");
-                } else messageSendMono.subscribe();
+                }
                 return TRUE;
             } else if (messageData.istable()) {
                 LuaTable messageTable = messageData.checktable();

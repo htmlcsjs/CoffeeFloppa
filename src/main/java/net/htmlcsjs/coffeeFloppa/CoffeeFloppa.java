@@ -36,9 +36,9 @@ public class CoffeeFloppa {
     public static Random randomGen;
     public static DiscordClient client;
     public static User self;
-    public static String deletionEmote = "\uD83D\uDDD1️";
-    public static String version = "@VERSION@";
-    public static String gitRef = "@GIT_VER@";
+    public static final String deletionEmote = "\uD83D\uDDD1️";
+    public static final String version = "@VERSION@";
+    public static final String gitRef = "@GIT_VER@";
 
     private static JSONObject jsonData;
 

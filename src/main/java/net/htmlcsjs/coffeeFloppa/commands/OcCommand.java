@@ -6,6 +6,7 @@ import discord4j.rest.util.AllowedMentions;
 import gregtech.api.GTValues;
 import gregtech.api.recipes.logic.OverclockingLogic;
 import gregtech.api.util.GTUtility;
+import net.htmlcsjs.coffeeFloppa.handlers.MessageHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -71,14 +72,14 @@ public class OcCommand implements ICommand {
                     voltageStr.append(strs[2]).append("\n");
                 }
                 String time = ticks ? String.format("%,ft", duration) : String.format("%,.2fs", duration / 20);
-                message.getChannel().flatMap(channel -> channel.createMessage().withEmbeds(
+                MessageHandler.sendRegisterMessage(message, message.getChannel().flatMap(channel -> channel.createMessage().withEmbeds(
                                 EmbedCreateSpec.builder().title(String.format("%,d EU/t (%s) for %s", eut, GTValues.VN[startingVoltage], time) + (tj ? " in TJ" : ""))
                                         .addField("EU/t", eutStr.append("```").toString(), true)
                                         .addField("Time", timeStr.append("```").toString(), true)
                                         .addField("Voltage", voltageStr.append("```").toString(), true)
                                         .build()
                         ).withMessageReference(message.getId())
-                        .withAllowedMentions(AllowedMentions.suppressEveryone())).subscribe();
+                        .withAllowedMentions(AllowedMentions.suppressEveryone())));
                 return null;
             }
         } catch (IndexOutOfBoundsException ignored) {
