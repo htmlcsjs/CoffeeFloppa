@@ -2,6 +2,7 @@ package net.htmlcsjs.coffeeFloppa.handlers;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.event.domain.message.MessageUpdateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
@@ -17,8 +18,7 @@ import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class MessageHandler {
 
@@ -26,12 +26,34 @@ public class MessageHandler {
 
     private static final Map<String, ICommand> searchCommands = new HashMap<>();
 
+    private static final Map<Snowflake, List<Snowflake>> messagesAndResponses =  new HashMap<>();
+
     public static Mono<Object> normal(MessageCreateEvent event) {
         Message message = event.getMessage();
-        if (message == null) {
+        String msgContent = message.getContent();
+        return executeMessage(message, msgContent);
+    }
+
+    public static Mono<Object> edited(MessageUpdateEvent event) {
+        Message message = event.getMessage().block();
+        MessageChannel channel = event.getChannel().block();
+        if (message == null || channel == null || !messagesAndResponses.containsKey(message.getId())) {
             return Mono.empty();
         }
+        for (Snowflake sus: messagesAndResponses.get(message.getId())) {
+            Message mogMsg = channel.getMessageById(sus).block();
+            if (mogMsg == null) {
+                return Mono.empty();
+            }
+            mogMsg.delete().subscribe();
+        }
+        messagesAndResponses.get(message.getId()).clear();
         String msgContent = message.getContent();
+        return executeMessage(message, msgContent);
+    }
+
+    @NotNull
+    private static Mono<Object> executeMessage(Message message, String msgContent) {
         Mono<Object> amongVal = Mono.empty();
 
         // If the first char is the prefix
@@ -42,8 +64,7 @@ public class MessageHandler {
                 ICommand command = commands.get(commandCall);
 
                 // we do a little bit of executing
-                Mono<Object> builtMessage = sendMessage(message, command);
-                if (builtMessage != null) amongVal = builtMessage;
+                sendMessage(message, command);
             } catch (IndexOutOfBoundsException ignored) {}
         } else {
             for (String key : searchCommands.keySet()) {
@@ -51,8 +72,7 @@ public class MessageHandler {
                 String terminator = key.split(" ")[1];
                 if (msgContent.contains(prefix) && msgContent.contains(terminator) && msgContent.indexOf(prefix) < msgContent.indexOf(terminator) && !message.getAuthor().get().isBot() && !message.mentionsEveryone()) {
                     ICommand command = searchCommands.get(key);
-                    Mono<Object> builtMessage = sendMessage(message, command);
-                    if (builtMessage != null) amongVal = builtMessage;
+                    sendMessage(message, command);
                 }
             }
         }
@@ -70,39 +90,64 @@ public class MessageHandler {
         return amongVal;
     }
 
-    public static @NotNull Mono<Object> sendMessage(Message message, ICommand command, boolean withReference) {
+    public static boolean sendMessage(Message ref, final String msg, boolean withReference) {
         try {
-            if (command != null) {
-                message.getChannel().flatMap(MessageChannel::type).subscribe(); // set flop to writing
-                String commandMessage = command.execute(message);
-                if (commandMessage != null && commandMessage.length() <= 2000) {
-                    return message.getChannel().flatMap(channel -> {
-                        MessageCreateMono msg = channel.createMessage(commandMessage)
-                                .withAllowedMentions(AllowedMentions.suppressEveryone());
-                        if (withReference) {
-                            msg = msg.withMessageReference(message.getId());
-                        }
-                        return msg;
-                    });
-                } else if (commandMessage != null) {
-                    return message.getChannel().flatMap(channel -> {
-                        MessageCreateMono msg = channel.createMessage("Message content too large for msg, falling to an attachment")
-                                .withFiles(MessageCreateFields.File.of("msg.txt", new ByteArrayInputStream(commandMessage.getBytes(StandardCharsets.UTF_8))))
-                                .withAllowedMentions(AllowedMentions.suppressEveryone());
-                        if (withReference) {
-                            msg = msg.withMessageReference(message.getId());
-                        }
-                        return msg;
-                    });
-                }
+            Mono<Message> messageMono = Mono.empty();
+            if (msg != null && msg.length() <= 2000) {
+                messageMono = ref.getChannel().flatMap(channel -> {
+                    MessageCreateMono mogus = channel.createMessage(msg).withAllowedMentions(AllowedMentions.suppressEveryone());
+                    if (withReference) {
+                        mogus = mogus.withMessageReference(ref.getId());
+                    }
+                    return mogus;
+                });
+            } else if (msg != null) {
+                messageMono = ref.getChannel().flatMap(channel -> {
+                    MessageCreateMono mogus = channel.createMessage("Message content too large for msg, falling to an attachment")
+                            .withFiles(MessageCreateFields.File.of("msg.txt", new ByteArrayInputStream(msg.getBytes(StandardCharsets.UTF_8))))
+                            .withAllowedMentions(AllowedMentions.suppressEveryone());
+                    if (withReference) {
+                        mogus = mogus.withMessageReference(ref.getId());
+                    }
+                    return mogus;
+                });
             }
+            return !sendRegisterMessage(ref, messageMono);
         } catch (Exception e) {
             CoffeeFloppa.handleException(e);
         }
-        return Mono.empty();
+        return false;
     }
 
-    public static Mono<Object> sendMessage(Message message, ICommand command) {
+    public static boolean sendRegisterMessage(Message ref, Mono<Message> messageMono) {
+        Message sent = messageMono.block();
+        if (sent == null) {
+            return true;
+        }
+        if (messagesAndResponses.containsKey(ref.getId())) {
+            messagesAndResponses.get(ref.getId()).add(sent.getId());
+        } else {
+            List<Snowflake> multimogus = new ArrayList<>();
+            multimogus.add(sent.getId());
+            messagesAndResponses.put(ref.getId(), multimogus);
+        }
+        if (messagesAndResponses.keySet().size() > 100) {
+            Optional<Snowflake> firstSnowflake = messagesAndResponses.keySet().stream().sorted().findFirst();
+            firstSnowflake.ifPresent(messagesAndResponses::remove);
+        }
+        return false;
+    }
+
+    public static boolean sendMessage(Message message, ICommand command, boolean withReference) {
+        if (command != null) {
+            message.getChannel().flatMap(MessageChannel::type).subscribe(); // set flop to writing
+            String commandMessage = command.execute(message);
+            return sendMessage(message, commandMessage, withReference);
+        }
+        return false;
+    }
+
+    public static boolean sendMessage(Message message, ICommand command) {
         return sendMessage(message, command, true);
     }
 

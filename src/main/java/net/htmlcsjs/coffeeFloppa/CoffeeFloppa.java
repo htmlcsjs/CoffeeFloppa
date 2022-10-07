@@ -5,6 +5,7 @@ import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.event.domain.message.MessageUpdateEvent;
 import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.event.domain.message.ReactionRemoveEvent;
 import discord4j.core.object.entity.User;
@@ -36,9 +37,9 @@ public class CoffeeFloppa {
     public static Random randomGen;
     public static DiscordClient client;
     public static User self;
-    public static String deletionEmote = "\uD83D\uDDD1️";
-    public static String version = "@VERSION@";
-    public static String gitRef = "@GIT_VER@";
+    public static final String deletionEmote = "\uD83D\uDDD1️";
+    public static final String version = "@VERSION@";
+    public static final String gitRef = "@GIT_VER@";
 
     private static JSONObject jsonData;
 
@@ -76,6 +77,7 @@ public class CoffeeFloppa {
 
             // Message handling
             Mono<Void> handleCommand = gateway.on(MessageCreateEvent.class, MessageHandler::normal).then();
+            Mono<Void> handleCommandEditing = gateway.on(MessageUpdateEvent.class, MessageHandler::edited).then();
 
             // Reaction Handling
             Mono<Void> handleReactionAddition = gateway.on(ReactionAddEvent.class, ReactionHandler::addition).then();
@@ -86,6 +88,7 @@ public class CoffeeFloppa {
                     .and(handleCommand)
                     .and(handleReactionAddition)
                     .and(handleReactionDeletion)
+                    .and(handleCommandEditing)
                     .doOnError(CoffeeFloppa::handleException);
         });
 
