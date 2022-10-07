@@ -37,17 +37,19 @@ public class MessageHandler {
     public static Mono<Object> edited(MessageUpdateEvent event) {
         Message message = event.getMessage().block();
         MessageChannel channel = event.getChannel().block();
-        if (message == null || channel == null || !messagesAndResponses.containsKey(message.getId())) {
+        if (message == null || channel == null) {
             return Mono.empty();
         }
-        for (Snowflake sus: messagesAndResponses.get(message.getId())) {
-            Message mogMsg = channel.getMessageById(sus).block();
-            if (mogMsg == null) {
-                return Mono.empty();
+        if (messagesAndResponses.containsKey(message.getId())) {
+            for (Snowflake sus : messagesAndResponses.get(message.getId())) {
+                Message mogMsg = channel.getMessageById(sus).block();
+                if (mogMsg == null) {
+                    return Mono.empty();
+                }
+                mogMsg.delete().subscribe();
             }
-            mogMsg.delete().subscribe();
+            messagesAndResponses.get(message.getId()).clear();
         }
-        messagesAndResponses.get(message.getId()).clear();
         String msgContent = message.getContent();
         return executeMessage(message, msgContent);
     }
