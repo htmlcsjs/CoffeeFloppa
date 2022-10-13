@@ -77,7 +77,7 @@ public class LuaHelper {
                 throw new Error("Script overran resource limits.");
             }
         };
-        int instruction_count = 1000;
+        int instruction_count = 1000000;
         sethook.invoke(LuaValue.varargsOf(new LuaValue[]{thread, hookfunc, LuaValue.EMPTYSTRING, LuaValue.valueOf(instruction_count)}));
 
         // When we resume the thread, it will run up to 'instruction_count' instructions
