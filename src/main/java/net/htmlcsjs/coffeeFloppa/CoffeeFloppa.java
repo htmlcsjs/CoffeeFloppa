@@ -4,10 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
-import discord4j.core.event.domain.message.MessageCreateEvent;
-import discord4j.core.event.domain.message.MessageUpdateEvent;
-import discord4j.core.event.domain.message.ReactionAddEvent;
-import discord4j.core.event.domain.message.ReactionRemoveEvent;
+import discord4j.core.event.domain.message.*;
 import discord4j.core.object.entity.User;
 import discord4j.core.spec.EmbedCreateSpec;
 import net.htmlcsjs.coffeeFloppa.commands.*;
@@ -78,6 +75,7 @@ public class CoffeeFloppa {
             // Message handling
             Mono<Void> handleCommand = gateway.on(MessageCreateEvent.class, MessageHandler::normal).then();
             Mono<Void> handleCommandEditing = gateway.on(MessageUpdateEvent.class, MessageHandler::edited).then();
+            Mono<Void> handleCommandDeletion = gateway.on(MessageDeleteEvent.class, MessageHandler::deletion).then();
 
             // Reaction Handling
             Mono<Void> handleReactionAddition = gateway.on(ReactionAddEvent.class, ReactionHandler::addition).then();
@@ -89,6 +87,7 @@ public class CoffeeFloppa {
                     .and(handleReactionAddition)
                     .and(handleReactionDeletion)
                     .and(handleCommandEditing)
+                    .and(handleCommandDeletion)
                     .doOnError(CoffeeFloppa::handleException);
         });
 

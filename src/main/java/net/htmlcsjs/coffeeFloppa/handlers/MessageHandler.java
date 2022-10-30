@@ -2,6 +2,7 @@ package net.htmlcsjs.coffeeFloppa.handlers;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.event.domain.message.MessageDeleteEvent;
 import discord4j.core.event.domain.message.MessageUpdateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
@@ -32,6 +33,25 @@ public class MessageHandler {
         Message message = event.getMessage();
         String msgContent = message.getContent();
         return executeMessage(message, msgContent);
+    }
+
+    public static Mono<Void> deletion(MessageDeleteEvent event) {
+        Snowflake message = event.getMessageId();
+        MessageChannel channel = event.getChannel().block();
+        if (channel == null) {
+            return Mono.empty();
+        }
+        Mono<Void> mogla = Mono.empty();
+        if (messagesAndResponses.containsKey(message)) {
+            for (Snowflake sus : messagesAndResponses.get(message)) {
+                Message mogMsg = channel.getMessageById(sus).block();
+                if (mogMsg != null) {
+                    mogla = mogla.and(mogMsg.delete());
+                }
+            }
+            messagesAndResponses.get(message).clear();
+        }
+        return mogla;
     }
 
     public static Mono<Object> edited(MessageUpdateEvent event) {
