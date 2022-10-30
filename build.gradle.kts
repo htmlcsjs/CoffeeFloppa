@@ -29,14 +29,14 @@ application {
 
 dependencies {
     implementation("com.discord4j:discord4j-core:3.2.3")
-    implementation("ch.qos.logback:logback-classic:1.2.11")
+    implementation("ch.qos.logback:logback-classic:1.4.4")
     implementation("com.googlecode.json-simple:json-simple:1.1.1")
     implementation("me.xdrop:fuzzywuzzy:1.4.0")
     implementation("org.luaj:luaj-jse:3.0.1")
     implementation("org.jetbrains:annotations:23.0.0")
     implementation("curse.maven:gtceu-557242:3808907")
     implementation("org.reflections:reflections:0.10.2")
-    implementation("org.apache.commons:commons-text:1.9")
+    implementation("org.apache.commons:commons-text:1.10.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
 }
@@ -46,6 +46,7 @@ tasks.create<Delete> ("deleteGeneratedSources") {
 }
 
 tasks.create<Copy> ("generateSource") {
+    filteringCharset = "UTF8"
     from("src") {
         filter(ReplaceTokens::class, "tokens" to mapOf("VERSION" to version, "GIT_VER" to grgit.head().id))
     }
@@ -83,6 +84,7 @@ tasks {
         targetCompatibility = JavaVersion.VERSION_17.majorVersion
         dependsOn("generateSource")
         setSource("$buildDir/sources/src/main")
+        options.encoding = "UTF8"
     }
     compileTestJava {
         dependsOn("generateSource")
