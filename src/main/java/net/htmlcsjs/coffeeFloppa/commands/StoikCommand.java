@@ -120,16 +120,21 @@ public class StoikCommand implements ICommand {
 
     public static List<String> parseChemical(String formula, String multiplier) {
         formula = formula.replace(" ", "");
+
         List<String> elements = new ArrayList<>();
         Status status = Status.LOOKING_COMPOUND_MULTIPLIER;
-        int bracketLevel = 0;
-        int balancedBrackets = 0;
         StringBuilder count = new StringBuilder();
         StringBuilder element = new StringBuilder();
+        int bracketLevel = 0;
+        int balancedBrackets = 0;
+        int bracketStartPos = -1;
+        boolean isStateSymbol = false;
+
+
         for (String c : formula.split("")) {
             switch (c) {
-                case "(" -> balancedBrackets++;
-                case ")" -> balancedBrackets--;
+                case "(", "[" -> balancedBrackets++;
+                case ")", "]" -> balancedBrackets--;
             }
         }
         if (balancedBrackets != 0) {
@@ -146,30 +151,38 @@ public class StoikCommand implements ICommand {
                     case NORMAL -> {
                         if (character.matches("[0-9]")) {
                             count.append(character);
-                        } else if (character.equals("(")) {
+                        } else if (character.matches("[\\[(]")) {
                             status = Status.IN_BRACKET;
                             addElements(elements, count, element, multiplier);
                             count = new StringBuilder();
                             element = new StringBuilder();
                             stopPoint++;
-                        } else if (!character.matches("[a-z()]")) {
+                        } else if (!character.matches("[a-z()\\[\\]]")) {
                             addElements(elements, count, element, multiplier);
                             count = new StringBuilder();
                             element = new StringBuilder(character);
-                        } else if (!character.equals(")")){
+                        } else if (!character.matches("[])]")){
                             element.append(character);
                         }
                     }
                     case IN_BRACKET -> {
-                        if (character.equals("(")) {
+                        if (character.matches("[\\[(]")) {
+                            if (bracketLevel == 0) {
+                                bracketStartPos = i;
+                            }
                             bracketLevel++;
-                        } else if (character.equals(")")) {
+                        } else if (character.matches("[])]")) {
                             bracketLevel--;
                             if (bracketLevel == 0) {
                                 status = Status.LOOKING_BRACKET_COUNT;
+                                isStateSymbol = false;
                             }
+                        } else if (i == bracketStartPos + 1 && character.matches("[a-z]")) {
+                            isStateSymbol = true;
                         }
-                        element.append(character);
+                        if (!isStateSymbol) {
+                            element.append(character);
+                        }
                     }
                     case LOOKING_BRACKET_COUNT -> {
                         if (character.matches("[0-9]")) {
@@ -208,13 +221,13 @@ public class StoikCommand implements ICommand {
             count.append("1");
         }
         long amount = Long.parseLong(count.toString()) * Long.parseLong(multiplier);
-        if (element.toString().matches("\\(.*\\)")) {
+        if (element.toString().matches("[\\[(].*[])]")) {
             List<String> subchemParsed = parseChemical(element.substring(1, element.length() - 1));
             for (long j = 0; j < amount; j++) {
                 elements.addAll(subchemParsed);
             }
         } else {
-            if (element.toString().matches("[)(]")) {
+            if (element.toString().matches("[()\\[\\]]")) {
                 return;
             }
             for (long j = 0; j < amount; j++) {
