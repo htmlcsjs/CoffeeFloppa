@@ -42,5 +42,10 @@ public class StoikCommandTest {
         caseFiveExpected.add("Ce");
         caseFiveExpected.add("Ce");
         assertTrue(caseFiveExpected.containsAll(caseFiveOutput) && caseFiveExpected.size() == caseFiveOutput.size(), "caseFive - 2(NH4)2Ce(NO3)6 - more than one mole of a chemical with sub chemicals");
+
+        // caseSix - 5(H2O)3((FeW)5CrMo2V)6CoMnSi - made a lapse in judgement I do not wish to repeat
+        List<String> caseSixOutput = StoikCommand.parseChemical("5(H2O)3((FeW)5CrMo2V)6CoMnSi");
+        List<String> caseSixExpected = StoikCommand.parseChemical("H30O15Co5Cr30Fe150Mn5Mo60Si5V30W150");
+        assertTrue(caseSixExpected.containsAll(caseSixOutput) && caseSixExpected.size() == caseSixOutput.size(), "caseSix - 5(H2O)3((FeW)5CrMo2V)6CoMnSi - made a lapse in judgement I do not wish to repeat");
     }
 }

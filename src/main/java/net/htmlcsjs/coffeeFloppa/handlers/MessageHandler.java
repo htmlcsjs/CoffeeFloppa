@@ -142,7 +142,7 @@ public class MessageHandler {
     }
 
     public static boolean sendRegisterMessage(Message ref, Mono<Message> messageMono) {
-        Message sent = messageMono.block();
+        Message sent = messageMono.doOnError(CoffeeFloppa::handleException).block();
         if (sent == null) {
             return true;
         }
@@ -163,8 +163,11 @@ public class MessageHandler {
     public static boolean sendMessage(Message message, ICommand command, boolean withReference) {
         if (command != null) {
             message.getChannel().flatMap(MessageChannel::type).subscribe(); // set flop to writing
-            String commandMessage = command.execute(message);
-            return sendMessage(message, commandMessage, withReference);
+            try {
+                return sendMessage(message, command.execute(message), withReference);
+            } catch (Exception e) {
+                CoffeeFloppa.handleException(e);
+            }
         }
         return false;
     }

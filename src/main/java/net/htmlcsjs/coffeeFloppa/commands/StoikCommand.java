@@ -18,7 +18,7 @@ public class StoikCommand implements ICommand {
     @Nullable
     @Override
     public String execute(Message message) {
-        String formulaStr = "";
+        String formulaStr;
         try {
             String[] splitFormula = message.getContent().split(" ");
             formulaStr = String.join(" ", Arrays.copyOfRange(splitFormula, 1, splitFormula.length));
@@ -40,11 +40,19 @@ public class StoikCommand implements ICommand {
 
         List<String> reactants = new ArrayList<>();
         for (String formula: formulaSides[0].split("\\+")) {
-            reactants.addAll(parseChemical(formula));
+            try {
+                reactants.addAll(parseChemical(formula));
+            } catch (IllegalArgumentException e) {
+                return String.format("Formula `%s` has unpaired brackets.", formula);
+            }
         }
         List<String> products = new ArrayList<>();
         for (String formula: formulaSides[1].split("\\+")) {
-            products.addAll(parseChemical(formula));
+            try {
+                products.addAll(parseChemical(formula));
+            } catch (IllegalArgumentException e) {
+                return String.format("Formula `%s` has unpaired brackets.", formula);
+            }
         }
         reactants.removeAll(Collections.singleton(""));
         products.removeAll(Collections.singleton(""));
@@ -76,9 +84,9 @@ public class StoikCommand implements ICommand {
 
         for (String element: elementKeys.stream().distinct().sorted().toList()) {
             if (productsMap.getOrDefault(element, -1).equals(reactantsMap.getOrDefault(element, -1))) {
-                clayStrBuilder.append("✅\u2705");
+                clayStrBuilder.append("✅✅");
             } else {
-                clayStrBuilder.append("\u274C\u274C");
+                clayStrBuilder.append("❌❌");
                 balanced = false;
             }
             productsStrBuilder.append(element).append(element.length() == 1 ? ":  " : ": ").append(productsMap.getOrDefault(element, 0)).append("\n");
@@ -110,101 +118,109 @@ public class StoikCommand implements ICommand {
 
     }
 
-    public static List<String> parseChemical(String formula) {
-        formula = formula.strip();
+    public static List<String> parseChemical(String formula, String multiplier) {
+        formula = formula.replace(" ", "");
         List<String> elements = new ArrayList<>();
         Status status = Status.LOOKING_COMPOUND_MULTIPLIER;
         int bracketLevel = 0;
+        int balancedBrackets = 0;
         StringBuilder count = new StringBuilder();
         StringBuilder element = new StringBuilder();
-        String multiplier = "1";
+        for (String c : formula.split("")) {
+            switch (c) {
+                case "(" -> balancedBrackets++;
+                case ")" -> balancedBrackets--;
+            }
+        }
+        if (balancedBrackets != 0) {
+            throw new IllegalArgumentException("Formula has unpaired brackets");
+        }
 
         for (int i = 0; i < formula.length(); i++) {
             String character = formula.split("")[i];
-            if (status == Status.NORMAL) {
-                if (character.matches("[0-9]")) {
-                    count.append(character);
-                } else if (character.equals("(")) {
-                    bracketLevel++;
-                    status = Status.IN_BRACKET;
-                    addElements(elements, count, element, multiplier);
-                    count = new StringBuilder();
-                    element = new StringBuilder();
-                } else if (!character.matches("[a-z\\(\\)]")) {
-                    addElements(elements, count, element, multiplier);
-                    count = new StringBuilder();
-                    element = new StringBuilder(character);
-                } else if (!character.equals(")")){
-                    element.append(character);
-                }
-            } else if (status == Status.IN_BRACKET) {
-                if (character.equals("(")) {
-                    bracketLevel++;
-                } else if (character.equals(")")) {
-                    bracketLevel--;
-                    if (bracketLevel == 0) {
-                        status = Status.LOOKING_BRACKET_COUNT;
-                        continue;
+            int j = 0;
+            int stopPoint = 1;
+            do {
+                j++;
+                switch (status) {
+                    case NORMAL -> {
+                        if (character.matches("[0-9]")) {
+                            count.append(character);
+                        } else if (character.equals("(")) {
+                            status = Status.IN_BRACKET;
+                            addElements(elements, count, element, multiplier);
+                            count = new StringBuilder();
+                            element = new StringBuilder();
+                            stopPoint++;
+                        } else if (!character.matches("[a-z()]")) {
+                            addElements(elements, count, element, multiplier);
+                            count = new StringBuilder();
+                            element = new StringBuilder(character);
+                        } else if (!character.equals(")")){
+                            element.append(character);
+                        }
+                    }
+                    case IN_BRACKET -> {
+                        if (character.equals("(")) {
+                            bracketLevel++;
+                        } else if (character.equals(")")) {
+                            bracketLevel--;
+                            if (bracketLevel == 0) {
+                                status = Status.LOOKING_BRACKET_COUNT;
+                            }
+                        }
+                        element.append(character);
+                    }
+                    case LOOKING_BRACKET_COUNT -> {
+                        if (character.matches("[0-9]")) {
+                            count.append(character);
+                        } else {
+                            status = Status.NORMAL;
+                            stopPoint++;
+                        }
+                    }
+                    case LOOKING_COMPOUND_MULTIPLIER -> {
+                        if (character.matches("[0-9]")) {
+                            count.append(character);
+                        } else {
+                            status = Status.NORMAL;
+                            if (i != 0) {
+                                multiplier = count.toString();
+                            }
+                            count = new StringBuilder();
+                            stopPoint++;
+                        }
                     }
                 }
-                element.append(character);
-            } else if (status == Status.LOOKING_BRACKET_COUNT) {
-                if (character.matches("[0-9]")) {
-                    count.append(character);
-                } else {
-                    addElements(elements, count, element, multiplier, status);
-                    count = new StringBuilder();
-                    element = new StringBuilder(character);
-                    status = Status.NORMAL;
-                }
-            } else if (status == Status.LOOKING_COMPOUND_MULTIPLIER) {
-                if (character.matches("[0-9]")) {
-                    count.append(character);
-                } else if (character.equals("(")) {
-                    bracketLevel++;
-                    status = Status.IN_BRACKET;
-                    if (i != 0) {
-                        multiplier = count.toString();
-                    }
-                    count = new StringBuilder();
-                    element = new StringBuilder();
-                } else {
-                    status = Status.NORMAL;
-                    if (i != 0) {
-                        multiplier = count.toString();
-                    }
-                    count = new StringBuilder();
-                    element.append(character);
-                }
-            }
+            } while (j < stopPoint);
         }
-        addElements(elements, count, element, multiplier, status);
+        addElements(elements, count, element, multiplier);
 
         return elements;
     }
 
-    private static void addElements(List<String> elements, StringBuilder count, StringBuilder element, String multiplier, Status status) {
+    public static List<String> parseChemical(String formula) {
+        return parseChemical(formula, "1");
+    }
+
+    private static void addElements(List<String> elements, StringBuilder count, StringBuilder element, String multiplier) {
         if (count.isEmpty()) {
             count.append("1");
         }
         long amount = Long.parseLong(count.toString()) * Long.parseLong(multiplier);
-        if (status == Status.LOOKING_BRACKET_COUNT) {
-            List<String> subchemParsed = parseChemical(element.toString());
+        if (element.toString().matches("\\(.*\\)")) {
+            List<String> subchemParsed = parseChemical(element.substring(1, element.length() - 1));
             for (long j = 0; j < amount; j++) {
                 elements.addAll(subchemParsed);
             }
         } else {
-            if (element.toString().matches("[\\)\\(]")) {
+            if (element.toString().matches("[)(]")) {
                 return;
             }
             for (long j = 0; j < amount; j++) {
                 elements.add(element.toString());
             }
         }
-    }
-
-    private static void addElements(List<String> elements, StringBuilder count, StringBuilder element, String multiplier) {
-        addElements(elements, count, element, multiplier, Status.NORMAL);
     }
 
     private enum Status {
