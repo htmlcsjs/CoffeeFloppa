@@ -227,7 +227,7 @@ public class StoikCommand implements ICommand {
                 elements.addAll(subchemParsed);
             }
         } else {
-            if (element.toString().matches("[()\\[\\]]")) {
+            if (element.toString().matches("[()\\[\\]]") || element.length() < 1) {
                 return;
             }
             for (long j = 0; j < amount; j++) {
