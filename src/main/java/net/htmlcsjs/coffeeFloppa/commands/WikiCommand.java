@@ -2,6 +2,7 @@ package net.htmlcsjs.coffeeFloppa.commands;
 
 import discord4j.core.object.entity.Message;
 import net.htmlcsjs.coffeeFloppa.CoffeeFloppa;
+import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -64,9 +65,9 @@ public class WikiCommand implements ICommand {
         if (endPoint < 0) return "Could not find page.";
 
         // pull out the page title and remove invalid spaces and quotes
-        final String result = rawResult.substring(location + TITLE_KEY.length(), endPoint)
+        final String result = StringEscapeUtils.unescapeJson(rawResult.substring(location + TITLE_KEY.length(), endPoint)
                 .replace(" ", "_")
-                .replace("\"", "");
+                .replace("\"", ""));
 
         // return the link to the wiki page
         return WIKI_PAGE + result;
