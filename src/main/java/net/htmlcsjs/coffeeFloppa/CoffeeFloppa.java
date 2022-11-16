@@ -3,10 +3,12 @@ package net.htmlcsjs.coffeeFloppa;
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.entity.User;
 import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.discordjson.json.ApplicationCommandRequest;
 import net.htmlcsjs.coffeeFloppa.commands.*;
 import net.htmlcsjs.coffeeFloppa.handlers.MessageHandler;
 import net.htmlcsjs.coffeeFloppa.handlers.ReactionHandler;
@@ -81,6 +83,26 @@ public class CoffeeFloppa {
             Mono<Void> handleReactionAddition = gateway.on(ReactionAddEvent.class, ReactionHandler::addition).then();
             Mono<Void> handleReactionDeletion = gateway.on(ReactionRemoveEvent.class, ReactionHandler::deletion).then();
 
+            // fuck slash commands
+            Long appid = client.getApplicationId().block();
+            if (appid != null) {
+                ApplicationCommandRequest shittyHelpCommand = ApplicationCommandRequest.builder()
+                        .name("help")
+                        .description("get \"help\" for this bot")
+                        .build();
+                client.getApplicationService()
+                        .createGlobalApplicationCommand(appid, shittyHelpCommand);
+                FloppaLogger.logger.info("Registered shitty command");
+            }
+
+            Mono<Void> handleShittyCommands = gateway.on(ChatInputInteractionEvent.class, event -> {
+                if (event.getCommandName().equals("help")) {
+                    return event.reply(String.format("This bot does not use discord's shitty slash command system, instead commands executed buy `%s<command name>`.\nSee `%shelp` for more.", FloppaTomlConfig.prefix,  FloppaTomlConfig.prefix));
+                }
+                return Mono.empty();
+            }).then();
+
+
             // we do a little combining
             return printOnLogin
                     .and(handleCommand)
@@ -88,6 +110,7 @@ public class CoffeeFloppa {
                     .and(handleReactionDeletion)
                     .and(handleCommandEditing)
                     .and(handleCommandDeletion)
+                    .and(handleShittyCommands)
                     .doOnError(CoffeeFloppa::handleException);
         });
 
