@@ -7,10 +7,10 @@ plugins {
     id("org.ajoberstar.grgit") version "5.0.0"
 }
 
-group = "net.htmlcsjs"
+group = "xyz.htmlcsjs"
 version = "0.4.0"
 var projectBaseName = "CoffeeFloppa"
-var mainClass = "net.htmlcsjs.coffeeFloppa.CoffeeFloppa"
+var mainClass = "xyz.htmlcsjs.coffeeFloppa.CoffeeFloppa"
 
 repositories {
     mavenCentral()
@@ -23,7 +23,7 @@ repositories {
 }
 
 application {
-    mainClass.set("net.htmlcsjs.coffeeFloppa.CoffeeFloppa")
+    mainClass.set("xyz.htmlcsjs.coffeeFloppa.CoffeeFloppa")
     tasks.run.get().workingDir = File("run/")
 }
 
