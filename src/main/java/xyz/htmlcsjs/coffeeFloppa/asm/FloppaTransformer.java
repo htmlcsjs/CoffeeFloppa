@@ -2,9 +2,6 @@ package xyz.htmlcsjs.coffeeFloppa.asm;
 
 import org.objectweb.asm.*;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 
 @SuppressWarnings("unused")
@@ -26,11 +23,11 @@ public class FloppaTransformer implements Opcodes{
             }
         }
         if (transformed) {
-            try {
+            /*try {
                 Files.write(Paths.get(className + ".class").toAbsolutePath(), transformedClass);
             } catch (IOException e) {
                 throw new RuntimeException(e);
-            }
+            }*/
 
             FloppaLauncher.logger.info(String.format("Transformed %s", className));
         }
