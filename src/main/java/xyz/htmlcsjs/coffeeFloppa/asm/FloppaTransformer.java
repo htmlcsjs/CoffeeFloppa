@@ -7,25 +7,47 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class FloppaTransformer implements Opcodes{
-    private static final String TRANSFORM_CLASS = "gregtech.api.util.GTUtility";
     private static final List<String> IGNORE_METHODS = List.of("getTierByVoltage@(J)B", "<init>@()V");
+    public static final String REPLACEMENT_FORMAT = "£";
 
     public static byte[] transform(ClassLoader loader, String className, byte[] classfileBuffer) {
-        if(!TRANSFORM_CLASS.equals(className)) {
-            return classfileBuffer;
+        byte[] transformedClass = classfileBuffer;
+        boolean transformed = false;
+        switch (className) {
+            case "gregtech.api.util.GTUtility" -> {
+                transformed = true;
+                transformedClass = GTUtilTransformer(className, classfileBuffer);
+            }
+            case "gregtech.api.GTValues" -> {
+                transformed = true;
+                transformedClass = GTValueTransformer(className, classfileBuffer);
+            }
         }
+        if (transformed) {
+            try {
+                Files.write(Paths.get(className + ".class").toAbsolutePath(), transformedClass);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
+            FloppaLauncher.logger.info(String.format("Transformed %s", className));
+        }
+        return transformedClass;
+    }
+
+    private static byte[] GTUtilTransformer(String className, byte[] classfileBuffer) {
         ClassReader cr = new ClassReader(classfileBuffer);
         ClassWriter cw = new ClassWriter(cr, 0);
 
-        cr.accept(new ClassVisitor(Opcodes.ASM5, cw) {
+        cr.accept(new ClassVisitor(ASM9, cw) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
                 if (IGNORE_METHODS.contains(name + "@" + desc)) {
                     return super.visitMethod(access, name, desc, signature, exceptions);
                 } else if (name.equals("<clinit>") && desc.equals("()V")) {
-                    return new GTValCLInit(super.visitMethod(access, name, desc, signature, exceptions));
+                    return new GTUtilCLInit(super.visitMethod(access, name, desc, signature, exceptions));
                 }
                 return null;
             }
@@ -43,21 +65,13 @@ public class FloppaTransformer implements Opcodes{
 
             }
         }, 0);
-
-        try {
-            Files.write(Paths.get(className + ".class").toAbsolutePath(), cw.toByteArray());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        FloppaLauncher.logger.info(String.format("Transformed %s", className));
         return cw.toByteArray();
     }
 
-    private static class GTValCLInit extends MethodVisitor {
+    private static class GTUtilCLInit extends MethodVisitor {
         private final MethodVisitor mv;
 
-        protected GTValCLInit(MethodVisitor mv) {
+        protected GTUtilCLInit(MethodVisitor mv) {
             super(ASM9, null);
             this.mv = mv;
         }
@@ -97,6 +111,40 @@ public class FloppaTransformer implements Opcodes{
             mv.visitLocalVariable("i", "I", null, label2, label3, 0);
             mv.visitMaxs(3, 1);
             mv.visitEnd();
+        }
+    }
+
+    private static byte[] GTValueTransformer(String className, byte[] classfileBuffer) {
+        ClassReader cr = new ClassReader(classfileBuffer);
+        ClassWriter cw = new ClassWriter(cr, 0);
+
+        cr.accept(new ClassVisitor(ASM9, cw) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
+                if (name.equals("<clinit>")) {
+                    return new GTValCLInit(mv);
+                }
+                return mv;
+            }
+        }, 0);
+
+        return cw.toByteArray();
+    }
+
+    private static class GTValCLInit extends MethodVisitor {
+
+        protected GTValCLInit(MethodVisitor mv) {
+            super(ASM9, mv);
+        }
+
+        @Override
+        public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
+            if (opcode == GETSTATIC && owner.equals("net/minecraft/util/text/TextFormatting")) {
+                super.visitFieldInsn(GETSTATIC, "xyz/htmlcsjs/coffeeFloppa/asm/FloppaTransformer", "REPLACEMENT_FORMAT", "Ljava/lang/String;");
+            } else {
+                super.visitFieldInsn(opcode, owner, name, descriptor);
+            }
         }
     }
 }
