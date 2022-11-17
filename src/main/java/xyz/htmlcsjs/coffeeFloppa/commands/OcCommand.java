@@ -52,7 +52,7 @@ public class OcCommand implements ICommand {
                 byte startingVoltage = GTUtility.getTierByVoltage(eut);
                 for (int v = startingVoltage; v <= GTValues.MAX; v++) {
                     String[] sus = {"", "", ""};
-                    int[] ocResult = OverclockingLogic.standardOverclockingLogic(eut, GTValues.V[v], (int) Math.floor(ticks ? duration : (duration * 20)), tj ? 2.8: 2, 4, 14);
+                    int[] ocResult = OverclockingLogic.standardOverclockingLogic(eut, GTValues.V[v], (int) Math.floor(ticks ? duration : (duration * 20)), 14, tj ? 2.8: 2, 4);
                     sus[0] = String.format("%,d EU/t", ocResult[0]);
                     if (ticks || ocResult[1] < 10) {
                         sus[1] = String.format("%,dt", ocResult[1]);

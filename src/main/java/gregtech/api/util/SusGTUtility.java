@@ -4,7 +4,7 @@ import static gregtech.api.GTValues.V;
 
 
 // From https://github.com/GregTechCEu/GregTech/blob/master/src/main/java/gregtech/api/util/GTUtility.java, Licensed under LGPL
-public class GTUtility {
+public class SusGTUtility {
     public static byte getTierByVoltage(long voltage) {
         byte tier = 0;
         while (++tier < V.length) {
