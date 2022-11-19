@@ -28,6 +28,7 @@ public class StoikCommand implements ICommand {
 
         formulaStr = formulaStr.replace("`", "");
         formulaStr = formulaStr.replace("=", "->");
+        formulaStr = formulaStr.replace(" ", "");
 
         String[] formulaSides = formulaStr.split("->");
         if (formulaSides.length !=2) {
@@ -42,6 +43,8 @@ public class StoikCommand implements ICommand {
         for (String formula: formulaSides[0].split("\\+")) {
             try {
                 reactants.addAll(parseChemical(formula));
+            } catch (NumberFormatException e) {
+                return String.format("Formula `%s` has too many coefficients.", formula);
             } catch (IllegalArgumentException e) {
                 return String.format("Formula `%s` has unpaired brackets.", formula);
             }
@@ -50,7 +53,9 @@ public class StoikCommand implements ICommand {
         for (String formula: formulaSides[1].split("\\+")) {
             try {
                 products.addAll(parseChemical(formula));
-            } catch (IllegalArgumentException e) {
+            } catch (NumberFormatException e) {
+                return String.format("Formula `%s` has too many coefficients.", formula);
+            }  catch (IllegalArgumentException e) {
                 return String.format("Formula `%s` has unpaired brackets.", formula);
             }
         }
@@ -118,7 +123,7 @@ public class StoikCommand implements ICommand {
 
     }
 
-    public static List<String> parseChemical(String formula, String multiplier) {
+    public static List<String> parseChemical(String formula, String multiplier) throws NumberFormatException {
         formula = formula.replace(" ", "");
 
         List<String> elements = new ArrayList<>();
@@ -216,21 +221,24 @@ public class StoikCommand implements ICommand {
         return parseChemical(formula, "1");
     }
 
-    private static void addElements(List<String> elements, StringBuilder count, StringBuilder element, String multiplier) {
+    private static void addElements(List<String> elements, StringBuilder count, StringBuilder element, String multiplier) throws NumberFormatException {
         if (count.isEmpty()) {
             count.append("1");
         }
-        long amount = Long.parseLong(count.toString()) * Long.parseLong(multiplier);
+        int amount = Integer.parseInt(count.toString()) * Integer.parseInt(multiplier);
+        if (amount > Math.pow(2, 24)) {
+            throw new NumberFormatException("%s is too large of a number");
+        }
         if (element.toString().matches("[\\[(].*[])]")) {
             List<String> subchemParsed = parseChemical(element.substring(1, element.length() - 1));
-            for (long j = 0; j < amount; j++) {
+            for (int j = 0; j < amount; j++) {
                 elements.addAll(subchemParsed);
             }
         } else {
             if (element.toString().matches("[()\\[\\]]") || element.length() < 1) {
                 return;
             }
-            for (long j = 0; j < amount; j++) {
+            for (int j = 0; j < amount; j++) {
                 elements.add(element.toString());
             }
         }
