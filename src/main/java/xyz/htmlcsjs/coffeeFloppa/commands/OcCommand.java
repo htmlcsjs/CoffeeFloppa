@@ -6,12 +6,13 @@ import discord4j.rest.util.AllowedMentions;
 import gregtech.api.GTValues;
 import gregtech.api.recipes.logic.OverclockingLogic;
 import gregtech.api.util.GTUtility;
-import xyz.htmlcsjs.coffeeFloppa.handlers.MessageHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import xyz.htmlcsjs.coffeeFloppa.handlers.MessageHandler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class OcCommand implements ICommand {
 
@@ -42,22 +43,39 @@ public class OcCommand implements ICommand {
             if (args.get(1).equalsIgnoreCase("ebf")) {
                 //OverclockingLogic.heatingCoilOverclockingLogic(args[2]) todo
             } else {
-                int eut = Integer.parseInt(args.get(1));
-                float duration = Float.parseFloat(args.get(2));
+                int eut;
+                float duration;
+                try {
+                    eut = Integer.parseInt(args.get(1));
+                    duration = Float.parseFloat(args.get(2));
+                } catch (NumberFormatException e) {
+                    Pattern pattern = Pattern.compile("F.+ing: \"(.+)\"", Pattern.MULTILINE);
+                    return pattern.matcher(e.getMessage()).replaceAll("`$1` is not formatted correctly.");
+                }
                 boolean ticks = args.contains("--ticks");
                 boolean tj = args.contains("--tj");
 
                 List<String[]> outputList = new ArrayList<>();
 
-                byte startingVoltage = GTUtility.getTierByVoltage(eut);
-                for (int v = startingVoltage; v <= GTValues.MAX; v++) {
+                byte startingTier = GTUtility.getTierByVoltage(eut);
+                if (startingTier == GTValues.ULV && !tj) {
+                    startingTier = GTValues.LV;
+                }
+
+                long lastVoltage = 0;
+                for (int v = startingTier; v <= GTValues.MAX; v++) {
                     String[] sus = {"", "", ""};
-                    int[] ocResult = OverclockingLogic.standardOverclockingLogic(eut, GTValues.V[v], (int) Math.floor(ticks ? duration : (duration * 20)), tj ? 2.8: 2, 4, 14);
+                    int[] ocResult = OverclockingLogic.standardOverclockingLogic(eut, eut * ((long) Math.pow(4, v - startingTier)), (int) Math.floor(ticks ? duration : (duration * 20)), 14, tj ? 2.8: 2, 4);
+                    if (lastVoltage == ocResult[0]) {
+                        break;
+                    }
+                    lastVoltage = ocResult[0];
+
                     sus[0] = String.format("%,d EU/t", ocResult[0]);
                     if (ticks || ocResult[1] < 10) {
                         sus[1] = String.format("%,dt", ocResult[1]);
                     } else {
-                        sus[1] = String.format("%,.2fs", (float)ocResult[1] / 20);
+                        sus[1] = String.format("%,.2fs", (float) ocResult[1] / 20);
                     }
                     sus[2] = tj ? TJVN[v] : GTValues.VN[v];
                     outputList.add(sus);
@@ -71,9 +89,10 @@ public class OcCommand implements ICommand {
                     timeStr.append(strs[1]).append("\n");
                     voltageStr.append(strs[2]).append("\n");
                 }
-                String time = ticks ? String.format("%,ft", duration) : String.format("%,.2fs", duration / 20);
+                String time = ticks ? String.format("%,ft", duration) : String.format("%,.2fs", duration);
+                byte finalStartingTier = startingTier;
                 MessageHandler.sendRegisterMessage(message, message.getChannel().flatMap(channel -> channel.createMessage().withEmbeds(
-                                EmbedCreateSpec.builder().title(String.format("%,d EU/t (%s) for %s", eut, GTValues.VN[startingVoltage], time) + (tj ? " in TJ" : ""))
+                                EmbedCreateSpec.builder().title(String.format("%,d EU/t (%s) for %s", eut, GTValues.VN[finalStartingTier], time) + (tj ? " in TJ" : ""))
                                         .addField("EU/t", eutStr.append("```").toString(), true)
                                         .addField("Time", timeStr.append("```").toString(), true)
                                         .addField("Voltage", voltageStr.append("```").toString(), true)

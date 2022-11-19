@@ -42,7 +42,7 @@ public class CoffeeFloppa {
 
     private static JSONObject jsonData;
 
-    public static void main(String[] args) throws IOException {
+    public void run() throws IOException {
         // Init stuff
         FloppaLogger.init();
         FloppaLogger.logger.info("Staring initial config sync");

@@ -8,9 +8,9 @@ plugins {
 }
 
 group = "xyz.htmlcsjs"
-version = "0.4.0"
+version = "0.4.1"
 var projectBaseName = "CoffeeFloppa"
-var mainClass = "xyz.htmlcsjs.coffeeFloppa.CoffeeFloppa"
+var mainClass = "xyz.htmlcsjs.coffeeFloppa.asm.FloppaLauncher"
 
 repositories {
     mavenCentral()
@@ -23,7 +23,7 @@ repositories {
 }
 
 application {
-    mainClass.set("xyz.htmlcsjs.coffeeFloppa.CoffeeFloppa")
+    mainClass.set("xyz.htmlcsjs.coffeeFloppa.asm.FloppaLauncher")
     tasks.run.get().workingDir = File("run/")
 }
 
@@ -34,9 +34,10 @@ dependencies {
     implementation("me.xdrop:fuzzywuzzy:1.4.0")
     implementation("org.luaj:luaj-jse:3.0.1")
     implementation("org.jetbrains:annotations:23.0.0")
-    implementation("curse.maven:gtceu-557242:3808907")
+    implementation("curse.maven:gtceu-557242:4068926")
     implementation("org.reflections:reflections:0.10.2")
     implementation("org.apache.commons:commons-text:1.10.0")
+    implementation("org.ow2.asm:asm:9.4") // boy i love asm
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
 }
