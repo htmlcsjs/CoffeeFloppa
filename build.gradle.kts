@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "xyz.htmlcsjs"
-version = "0.4.0"
+version = "0.4.1"
 var projectBaseName = "CoffeeFloppa"
 var mainClass = "xyz.htmlcsjs.coffeeFloppa.asm.FloppaLauncher"
 
