@@ -36,4 +36,7 @@ public class FloppaTomlConfig {
 
     @TomlConfig.ConfigElement(location = "error.channel")
     public static String errorChannel;
+
+    @TomlConfig.ConfigElement(location = "gh_token")
+    public static String GitHubToken = "";
 }

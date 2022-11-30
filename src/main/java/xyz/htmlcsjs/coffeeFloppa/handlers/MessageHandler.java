@@ -11,11 +11,12 @@ import discord4j.core.spec.MessageCreateFields;
 import discord4j.core.spec.MessageCreateMono;
 import discord4j.discordjson.json.EmojiData;
 import discord4j.rest.util.AllowedMentions;
-import xyz.htmlcsjs.coffeeFloppa.CoffeeFloppa;
-import xyz.htmlcsjs.coffeeFloppa.commands.ICommand;
-import xyz.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
+import xyz.htmlcsjs.coffeeFloppa.CoffeeFloppa;
+import xyz.htmlcsjs.coffeeFloppa.commands.ICommand;
+import xyz.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
+import xyz.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -88,6 +89,8 @@ public class MessageHandler {
                 // we do a little bit of executing
                 sendMessage(message, command);
             } catch (IndexOutOfBoundsException ignored) {}
+        } else if (CommandUtil.ghIssuePattern.matcher(msgContent).matches() && !message.getAuthor().get().isBot()) {
+            sendMessage(message, commands.get("gh"));
         } else {
             for (String key : searchCommands.keySet()) {
                 String prefix = key.split(" ")[0];

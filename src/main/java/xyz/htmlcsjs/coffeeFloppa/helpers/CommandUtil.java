@@ -22,6 +22,7 @@ public class CommandUtil {
     // Pattern for recognizing a URL, based off RFC 3986, "taken" from https://stackoverflow.com/questions/5713558/
     public static final Pattern urlPattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/|www\\.)(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)",
             Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL);
+    public static final Pattern ghIssuePattern = Pattern.compile(".*?(\\w+/\\w+)#(\\d+).*?", Pattern.MULTILINE);
 
     public static boolean getAllowedToRun(Message message) {
         Set<Snowflake> userRoleIDs;
@@ -87,5 +88,17 @@ public class CommandUtil {
             url = new URL(urlStr);
         }
         return new BufferedReader(new InputStreamReader(url.openStream())).lines().collect(Collectors.joining("\n"));
+    }
+
+    public static String trimString(String text, int length, String end) {
+        if (text.length() <= length) {
+            return text;
+        } else {
+            return text.substring(0, length) + end;
+        }
+    }
+
+    public static String trimString(String text, int length) {
+        return trimString(text, length, "");
     }
 }

@@ -42,6 +42,7 @@ public class CoffeeFloppa {
 
     private static JSONObject jsonData;
 
+    @SuppressWarnings("unused")
     public void run() throws IOException {
         // Init stuff
         FloppaLogger.init();
