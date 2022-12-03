@@ -295,7 +295,7 @@ public class FloppaLuaLib extends TwoArgFunction {
                 return TRUE;
             } else if (messageData.istable()) {
                 LuaTable messageTable = messageData.checktable();
-                message.getChannel().flatMap(channel -> {
+                MessageHandler.sendRegisterMessage(message, message.getChannel().flatMap(channel -> {
                     MessageCreateMono msg = channel.createMessage(messageTable.get("content").optjstring(""))
                             .withAllowedMentions(AllowedMentions.suppressEveryone());
                     if (msgCount == 1) {
@@ -386,15 +386,15 @@ public class FloppaLuaLib extends TwoArgFunction {
                         if (clientError.getErrorResponse().isPresent() && (int) clientError.getErrorResponse().get().getFields().get("code") == 50006) {
                             MessageChannel channel = message.getChannel().block();
                             if (channel != null) {
-                                return channel.createMessage(EmbedCreateSpec.builder()
+                                MessageHandler.sendRegisterMessage(message, message.getChannel().flatMap(c -> c.createMessage(EmbedCreateSpec.builder()
                                         .footer("you dumbass, you cannot send a empty message", null)
                                         .image("https://i.imgur.com/V9R9uVS.gif")
-                                        .build());
+                                        .build())));
                             }
                         }
                     }
                     return Mono.empty();
-                }).subscribe();
+                }));
                 return TRUE;
             }
             return error("Message string nor table with message information supplied");
