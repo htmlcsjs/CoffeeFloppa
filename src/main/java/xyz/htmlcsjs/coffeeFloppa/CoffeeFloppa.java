@@ -56,9 +56,6 @@ public class CoffeeFloppa {
         client = DiscordClient.create(Files.readString(Path.of("token")).strip());
         randomGen = new Random();
 
-        // Generate inital commands
-        refreshCommands();
-
         // Load lang for materials
         try (FileReader reader = new FileReader("materials.lang")) {
             MaterialCommandsHelper.loadMaterials(new BufferedReader((reader)));

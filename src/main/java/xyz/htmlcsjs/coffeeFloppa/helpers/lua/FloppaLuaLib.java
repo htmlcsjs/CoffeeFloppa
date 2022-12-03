@@ -8,9 +8,8 @@ import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateFields;
 import discord4j.core.spec.MessageCreateMono;
 import discord4j.rest.http.client.ClientException;
-import discord4j.rest.util.AllowedMentions;
-import discord4j.rest.util.Color;
-import discord4j.rest.util.Image;
+import discord4j.rest.util.*;
+import org.jetbrains.annotations.Nullable;
 import xyz.htmlcsjs.coffeeFloppa.FloppaLogger;
 import xyz.htmlcsjs.coffeeFloppa.handlers.MessageHandler;
 import xyz.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
@@ -25,6 +24,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -85,7 +85,7 @@ public class FloppaLuaLib extends TwoArgFunction {
                 channelID = LuaValue.NIL;
             }
 
-            Channel channelJava = guild.getChannelById(Snowflake.of(channelID.isnil() ? message.getChannelId().asString() : channelID.checkjstring())).block();
+            Channel channelJava = getChannelSafe(channelID);
             MessageChannel msgChannel = (MessageChannel) channelJava;
             Message messageCurrent;
             if (msgChannel != null) {
@@ -112,6 +112,18 @@ public class FloppaLuaLib extends TwoArgFunction {
         }
     }
 
+    @Nullable
+    private GuildChannel getChannelSafe(LuaValue channelID) {
+        GuildChannel channel = guild.getChannelById(Snowflake.of(channelID.isnil() ? message.getChannelId().asString() : channelID.checkjstring())).block();
+        if (channel instanceof TopLevelGuildChannel && message.getAuthor().isPresent()) {
+            PermissionSet permissions = channel.getEffectivePermissions(message.getAuthor().get().getId()).block();
+            if (permissions != null && permissions.containsAll(Arrays.asList(Permission.VIEW_CHANNEL, Permission.READ_MESSAGE_HISTORY))) {
+                return channel;
+            }
+        }
+        return null;
+    }
+
     public class getChannel extends OneArgFunction {
         @Override
         public LuaValue call(LuaValue channelID) {
@@ -120,7 +132,7 @@ public class FloppaLuaLib extends TwoArgFunction {
                     FloppaLogger.logger.error("ERROR, Guild is null\n" + message);
                     return error("The referenced guild is null\nThis might be a problem on the bots side");
                 }
-                Channel channelJava = guild.getChannelById(Snowflake.of(channelID.isnil() ? message.getChannelId().asString() : channelID.checkjstring())).block();
+                Channel channelJava = getChannelSafe(channelID);
                 if (channelJava == null){
                     return error("failed to find channel from id " + channelID);
                 }
