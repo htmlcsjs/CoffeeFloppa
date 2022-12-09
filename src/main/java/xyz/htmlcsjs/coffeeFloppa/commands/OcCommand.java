@@ -92,7 +92,7 @@ public class OcCommand implements ICommand {
                 String time = ticks ? String.format("%,ft", duration) : String.format("%,.2fs", duration);
                 byte finalStartingTier = startingTier;
                 MessageHandler.sendRegisterMessage(message, message.getChannel().flatMap(channel -> channel.createMessage().withEmbeds(
-                                EmbedCreateSpec.builder().title(String.format("%,d EU/t (%s) for %s", eut, GTValues.VN[finalStartingTier], time) + (tj ? " in TJ" : ""))
+                                EmbedCreateSpec.builder().title(String.format("%,d EU/t (%s) for %s", eut, tj ? TJVN[finalStartingTier] : GTValues.VN[finalStartingTier], time) + (tj ? " in TJ" : ""))
                                         .addField("EU/t", eutStr.append("```").toString(), true)
                                         .addField("Time", timeStr.append("```").toString(), true)
                                         .addField("Voltage", voltageStr.append("```").toString(), true)

@@ -36,6 +36,7 @@ public class StoikCommand implements ICommand {
                     Error, malformed expression
                     Please format equation as `Reactant1 + Reactant2 -> Product1 + Product2`
                     E.g. `6CO2 + 6H2O -> C6H12O6 + 6O2`
+                    FYI spaces are stripped
                     """;
         }
 
