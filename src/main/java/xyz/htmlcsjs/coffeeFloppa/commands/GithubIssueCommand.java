@@ -47,6 +47,10 @@ public class GithubIssueCommand implements ICommand {
         HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).followRedirects(HttpClient.Redirect.ALWAYS).connectTimeout(Duration.ofSeconds(5)).build();
         List<EmbedCreateSpec> embeds = new ArrayList<>();
 
+        if (issueMap.isEmpty()) {
+            return "No valid issue descriptors supplied\nUse the format `owner/repo#issueid`";
+        }
+
         issueMap.forEach((repo, id) -> {
             /*if (!repo.matches("[a-z\\d](?:[a-z\\d]|-(?=[a-z\\d])){0,38}/[A-Za-z0-9_.\\-]+")) {
                 return; //TODO add aliases
@@ -73,7 +77,17 @@ public class GithubIssueCommand implements ICommand {
                         embedBuilder.author(userData.containsKey("name") ? (String) userData.get("name") : (String) userData.get("login"), (String) userData.get("html_url"), (String) userData.get("avatar_url"));
                     }
                     if (issueJSON.containsKey("body")) {
-                        embedBuilder.description(CommandUtil.trimString((String) issueJSON.get("body"), 1000, "..."));
+                        StringBuilder body = new StringBuilder();
+                        int i = 0;
+                        for (String s : ((String) issueJSON.get("body")).split("\n")) {
+                            if (i > 10) {
+                                body = new StringBuilder(body.toString().trim() + "..\n");
+                                break;
+                            }
+                            body.append(s).append("\n");
+                            i++;
+                        }
+                        embedBuilder.description(CommandUtil.trimString(body.toString(), 1000, "..."));
                     }
                     embedBuilder.timestamp(Instant.parse((String) issueJSON.get("updated_at")));
                     embeds.add(embedBuilder.build());
