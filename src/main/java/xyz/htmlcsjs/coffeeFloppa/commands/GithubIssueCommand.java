@@ -81,7 +81,7 @@ public class GithubIssueCommand implements ICommand {
                         int i = 0;
                         for (String s : ((String) issueJSON.get("body")).split("\n")) {
                             if (i > 10) {
-                                body = new StringBuilder(body.toString().trim() + "..\n");
+                                body = new StringBuilder(body.toString().trim() + "...\n");
                                 break;
                             }
                             body.append(s).append("\n");
