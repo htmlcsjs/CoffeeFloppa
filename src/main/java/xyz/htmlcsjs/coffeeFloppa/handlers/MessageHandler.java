@@ -5,7 +5,11 @@ import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.MessageDeleteEvent;
 import discord4j.core.event.domain.message.MessageUpdateEvent;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.Channel;
+import discord4j.core.object.entity.channel.GuildChannel;
 import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.MessageCreateFields;
 import discord4j.core.spec.MessageCreateMono;
@@ -21,12 +25,15 @@ import xyz.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class MessageHandler {
 
     private static final Map<String, ICommand> commands = new HashMap<>();
 
     private static final Map<String, ICommand> searchCommands = new HashMap<>();
+
+    private static String currentMessageURL;
 
     private static final Map<Snowflake, List<Snowflake>> messagesAndResponses =  new HashMap<>();
 
@@ -77,6 +84,19 @@ public class MessageHandler {
 
     @NotNull
     private static Mono<Object> executeMessage(Message message, String msgContent) {
+        Channel channel = message.getChannel().block();
+
+        if (channel instanceof PrivateChannel dm) {
+            currentMessageURL = String.format("[dms with %s](https://discord.com/channels/@me/%s/%s)", dm.getRecipients()
+                    .stream()
+                    .map(User::getMention)
+                    .collect(Collectors.joining(", ")), dm.getId().asString(), message.getId().asString());
+        } else if (channel instanceof GuildChannel gc) {
+            currentMessageURL = String.format("[#%s](https://discord.com/channels/%s/%s/%s)", gc.getName(), gc.getGuildId().asString(), gc.getId().asString(), message.getId().asString());
+        } else {
+            currentMessageURL = null;
+        }
+
         Mono<Object> amongVal = Mono.empty();
 
         // If the first char is the prefix
@@ -112,6 +132,7 @@ public class MessageHandler {
                 CoffeeFloppa.increaseFlopCount();
             }
         }
+        currentMessageURL = null;
         return amongVal;
     }
 
@@ -228,4 +249,7 @@ public class MessageHandler {
         MessageHandler.searchCommands.clear();
     }
 
+    public static String getCurrentMessageURL() {
+        return currentMessageURL;
+    }
 }

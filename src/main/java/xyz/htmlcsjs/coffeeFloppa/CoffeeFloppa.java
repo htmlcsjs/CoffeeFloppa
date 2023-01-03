@@ -122,7 +122,7 @@ public class CoffeeFloppa {
 
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder()
                 .addField("Error Type", String.format("`%s`", throwable.getClass().getName()), true)
-                .addField("Message", String.format("`%s`", throwable.getLocalizedMessage()), true);
+                .addField("Message", MessageHandler.getCurrentMessageURL(), true);
 
         if (throwable.getStackTrace().length > 0) {
             try {
@@ -138,10 +138,10 @@ public class CoffeeFloppa {
                 builder.addField("Erroring Class", "`" + throwable.getStackTrace()[0].getClassName() + "`", true);
             }
         }
-        builder.addField("Trace", "```java\n" +
+        builder.description("**Trace**\n```java\n" + throwable.getLocalizedMessage() + "\n" +
                 Arrays.stream(throwable.getStackTrace()).limit(10).map(stackTraceElement ->
-                        "╠ " + stackTraceElement.getClassName() + ":" + stackTraceElement.getLineNumber())
-                        .collect(Collectors.joining("\n")) + "```", false);
+                        "╟" + stackTraceElement.getClassName() + ":" + stackTraceElement.getLineNumber())
+                        .collect(Collectors.joining("\n")) + "```");
         client.getChannelById(Snowflake.of(FloppaTomlConfig.errorChannel))
                 .createMessage(builder.build().asRequest()).subscribe();
         FloppaLogger.logger.error(stringWriter.toString());
