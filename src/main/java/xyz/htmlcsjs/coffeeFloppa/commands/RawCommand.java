@@ -63,9 +63,15 @@ public class RawCommand implements ICommand {
         boolean finalSource = source;
         String finalFilePath = filePath;
         InputStream finalClassStream = classStream;
-        boolean finalClassMode = classMode;
+        String content;
+        if (classMode) {
+            content = String.format("%s of `%s`", finalSource ? "Source" : "Bytecode", finalCommand);
+        } else {
+            content = String.format("%s of `$%s`, (Instance of `%s`)", finalSource ? "Source" : "Bytecode", finalCommand, commandClass.getName());
+        }
+        String finalContent = content;
         MessageHandler.sendRegisterMessage(message, message.getChannel().flatMap(channel -> channel.createMessage()
-                .withContent(String.format("%s of `%s%s`", finalSource ? "Source" : "Bytecode", finalClassMode ? "" : "$", finalCommand))
+                .withContent(finalContent)
                 .withFiles(MessageCreateFields.File.of(finalFilePath.split("/")[finalFilePath.split("/").length - 1], finalClassStream))
                 .withMessageReference(message.getId())
                 .withAllowedMentions(AllowedMentions.suppressEveryone())));
