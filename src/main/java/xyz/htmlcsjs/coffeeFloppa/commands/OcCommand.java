@@ -89,6 +89,9 @@ public class OcCommand implements ICommand {
                     timeStr.append(strs[1]).append("\n");
                     voltageStr.append(strs[2]).append("\n");
                 }
+                if (outputList.size() == 0) {
+                    return "Invalid voltage/duration passed in\n" + errorStr;
+                }
                 String time = ticks ? String.format("%,.0ft", duration) : String.format("%,.2fs", duration);
                 byte finalStartingTier = startingTier;
                 MessageHandler.sendRegisterMessage(message, message.getChannel().flatMap(channel -> channel.createMessage().withEmbeds(

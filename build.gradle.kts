@@ -60,7 +60,7 @@ tasks {
         manifest {
             attributes["Main-Class"] = mainClass
         }
-
+        from(sourceSets.main.get().java)
         archiveBaseName.set(projectBaseName)
     }
     shadowJar {

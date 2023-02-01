@@ -166,6 +166,7 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new RoleSelectorAdminCommand());
         MessageHandler.addCommand(new WikiCommand());
         MessageHandler.addCommand(new GuildCommand());
+        MessageHandler.addCommand(new RawCommand());
         MessageHandler.addCommand(new HelpCommand(75) {
             @Override
             public @NotNull String getName() {
