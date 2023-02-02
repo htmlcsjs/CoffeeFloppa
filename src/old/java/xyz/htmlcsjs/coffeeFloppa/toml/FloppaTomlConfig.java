@@ -16,17 +16,14 @@ public class FloppaTomlConfig {
     @TomlConfig.ConfigElement(location = "emote.count")
     public static long emoteCount = 0;
 
-    @TomlConfig.ConfigElement(location = "emote.animated")
-    public static boolean emoteAnimated = true;
+    @TomlConfig.ConfigElement(location = "emote.guild")
+    public static String emoteGuild = "664888369087512601";
 
     @TomlConfig.ConfigElement(location = "emote.phrase")
     public static String emotePhrase = "flop";
 
-    @TomlConfig.ConfigElement(location = "emote.name")
-    public static String emoteName = "flop";
-
     @TomlConfig.ConfigElement(location = "emote.emote")
-    public static long emoteID = 853358698964713523L;
+    public static String emoteID = "853358698964713523";
 
     @TomlConfig.ConfigElement(location = "disabled_commands")
     public static List<String> disabledCommands;

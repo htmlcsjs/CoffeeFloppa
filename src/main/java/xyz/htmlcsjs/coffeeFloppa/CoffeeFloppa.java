@@ -1,41 +1,24 @@
 package xyz.htmlcsjs.coffeeFloppa;
 
-import discord4j.common.util.Snowflake;
-import discord4j.core.DiscordClient;
-import discord4j.core.GatewayDiscordClient;
-import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
-import discord4j.core.event.domain.lifecycle.ReadyEvent;
-import discord4j.core.event.domain.message.*;
-import discord4j.core.object.entity.User;
-import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.discordjson.json.ApplicationCommandRequest;
-import org.jetbrains.annotations.NotNull;
-import org.json.simple.JSONArray;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.SelfUser;
+import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import reactor.core.publisher.Mono;
-import xyz.htmlcsjs.coffeeFloppa.commands.*;
-import xyz.htmlcsjs.coffeeFloppa.handlers.MessageHandler;
-import xyz.htmlcsjs.coffeeFloppa.handlers.ReactionHandler;
-import xyz.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
-import xyz.htmlcsjs.coffeeFloppa.helpers.MaterialCommandsHelper;
-import xyz.htmlcsjs.coffeeFloppa.helpers.lua.LuaHelper;
+import xyz.htmlcsjs.coffeeFloppa.handlers.OtherHandler;
 import xyz.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 import xyz.htmlcsjs.coffeeFloppa.toml.TomlAnnotationProcessor;
 
-import java.io.*;
-import java.lang.reflect.InvocationTargetException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Map;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 public class CoffeeFloppa {
     public static Random randomGen;
-    public static DiscordClient client;
-    public static User self;
+    public static JDA client;
+    public static SelfUser self;
     public static final String deletionEmote = "\uD83D\uDDD1️";
     public static final String version = "@VERSION@";
     public static final String gitRef = "@GIT_VER@";
@@ -50,72 +33,26 @@ public class CoffeeFloppa {
         TomlAnnotationProcessor.loadConfigs();
         TomlAnnotationProcessor.saveConfigs();
         FloppaLogger.logger.info("initial Configs synced!");
-        refreshData();
+        syncConfigs();
+//        RestAction.setDefaultFailure(CoffeeFloppa::handleException);
 
 
-        client = DiscordClient.create(Files.readString(Path.of("token")).strip());
+        client = JDABuilder.createDefault(Files.readString(Path.of("token")).strip())
+                .enableIntents(GatewayIntent.MESSAGE_CONTENT)
+                .addEventListeners(new OtherHandler())
+                .build();
         randomGen = new Random();
 
         // Load lang for materials
-        try (FileReader reader = new FileReader("materials.lang")) {
+        /* try (FileReader reader = new FileReader("materials.lang")) {
             MaterialCommandsHelper.loadMaterials(new BufferedReader((reader)));
         } catch (Exception e) {
             FloppaLogger.logger.error(CommandUtil.getStackTraceToString(e));
-        }
+        }*/
 
-        Mono<Void> login = client.withGateway((GatewayDiscordClient gateway) -> {
-            // Login message
-            Mono<Void> printOnLogin = gateway.on(ReadyEvent.class, event ->
-                    Mono.fromRunnable(() -> {
-                        self = event.getSelf();
-                        FloppaLogger.logger.info("Logged in as " +  self.getUsername() + "#" + self.getDiscriminator());
-                    }))
-                    .then();
-
-            // Message handling
-            Mono<Void> handleCommand = gateway.on(MessageCreateEvent.class, MessageHandler::normal).then();
-            Mono<Void> handleCommandEditing = gateway.on(MessageUpdateEvent.class, MessageHandler::edited).then();
-            Mono<Void> handleCommandDeletion = gateway.on(MessageDeleteEvent.class, MessageHandler::deletion).then();
-
-            // Reaction Handling
-            Mono<Void> handleReactionAddition = gateway.on(ReactionAddEvent.class, ReactionHandler::addition).then();
-            Mono<Void> handleReactionDeletion = gateway.on(ReactionRemoveEvent.class, ReactionHandler::deletion).then();
-
-            // fuck slash commands
-            Long appid = client.getApplicationId().block();
-            if (appid != null) {
-                ApplicationCommandRequest shittyHelpCommand = ApplicationCommandRequest.builder()
-                        .name("help")
-                        .description("get \"help\" for this bot")
-                        .build();
-                client.getApplicationService()
-                        .createGlobalApplicationCommand(appid, shittyHelpCommand);
-                FloppaLogger.logger.info("Registered shitty command");
-            }
-
-            Mono<Void> handleShittyCommands = gateway.on(ChatInputInteractionEvent.class, event -> {
-                if (event.getCommandName().equals("help")) {
-                    return event.reply(String.format("This bot does not use discord's shitty slash command system, instead commands executed buy `%s<command name>`.\nSee `%shelp` for more.", FloppaTomlConfig.prefix,  FloppaTomlConfig.prefix));
-                }
-                return Mono.empty();
-            }).then();
-
-
-            // we do a little combining
-            return printOnLogin
-                    .and(handleCommand)
-                    .and(handleReactionAddition)
-                    .and(handleReactionDeletion)
-                    .and(handleCommandEditing)
-                    .and(handleCommandDeletion)
-                    .and(handleShittyCommands)
-                    .doOnError(CoffeeFloppa::handleException);
-        });
-
-        login.block();
     }
 
-    public static void handleException(Throwable throwable) {
+/*    public static void handleException(Throwable throwable) {
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter);
         throwable.printStackTrace(printWriter);
@@ -215,7 +152,7 @@ public class CoffeeFloppa {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
     public static void syncConfigs() {
         FloppaLogger.logger.info("Staring config sync");
@@ -236,7 +173,7 @@ public class CoffeeFloppa {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        refreshData();
+        syncConfigs();
     }
 
     public static void increaseFlopCount() {
@@ -256,28 +193,32 @@ public class CoffeeFloppa {
                 continue;
             } else if (!inQuotes) {
                 switch (c) {
-                    case '{':
-                    case '[':
+                    case '{', '[' -> {
                         returnBuilder.append(c).append("\n").append(String.format("%" + (indent += indent_width) + "s", ""));
                         continue;
-                    case '}':
-                    case ']':
+                    }
+                    case '}', ']' -> {
                         returnBuilder.append("\n").append((indent -= indent_width) > 0 ? String.format("%" + indent + "s", "") : "").append(c);
                         continue;
-                    case ':':
+                    }
+                    case ':' -> {
                         returnBuilder.append(c).append(" ");
                         continue;
-                    case ',':
+                    }
+                    case ',' -> {
                         returnBuilder.append(c).append("\n").append(indent > 0 ? String.format("%" + indent + "s", "") : "");
                         continue;
-                    default:
+                    }
+                    default -> {
                         if (Character.isWhitespace(c)) continue;
+                    }
                 }
             }
 
             returnBuilder.append(c);
         }
         return returnBuilder.toString();
+
     }
 
 }

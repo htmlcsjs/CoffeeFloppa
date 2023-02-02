@@ -1,25 +1,17 @@
 package xyz.htmlcsjs.coffeeFloppa.handlers;
 
-import discord4j.common.util.Snowflake;
-import discord4j.core.event.domain.message.MessageCreateEvent;
-import discord4j.core.event.domain.message.MessageDeleteEvent;
-import discord4j.core.event.domain.message.MessageUpdateEvent;
-import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.User;
-import discord4j.core.object.entity.channel.Channel;
-import discord4j.core.object.entity.channel.GuildChannel;
-import discord4j.core.object.entity.channel.MessageChannel;
-import discord4j.core.object.entity.channel.PrivateChannel;
-import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.core.spec.MessageCreateFields;
-import discord4j.core.spec.MessageCreateMono;
-import discord4j.discordjson.json.EmojiData;
-import discord4j.rest.util.AllowedMentions;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.Channel;
+import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
+import net.dv8tion.jda.api.entities.emoji.CustomEmoji;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
-import reactor.core.publisher.Mono;
 import xyz.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import xyz.htmlcsjs.coffeeFloppa.commands.ICommand;
-import xyz.htmlcsjs.coffeeFloppa.helpers.CommandUtil;
 import xyz.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 
 import java.io.ByteArrayInputStream;
@@ -27,7 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class MessageHandler {
+public class MessageHandler extends ListenerAdapter {
 
     private static final Map<String, ICommand> commands = new HashMap<>();
 
@@ -35,12 +27,11 @@ public class MessageHandler {
 
     private static String currentMessageURL;
 
-    private static final Map<Snowflake, List<Snowflake>> messagesAndResponses =  new HashMap<>();
+    private static final Map<String, List<String>> messagesAndResponses =  new HashMap<>();
 
-    public static Mono<Object> normal(MessageCreateEvent event) {
-        Message message = event.getMessage();
-        String msgContent = message.getContent();
-        return executeMessage(message, msgContent);
+    @Override
+    public void onMessageReceived(@NotNull MessageReceivedEvent event) {
+        executeMessage(event, msgContent);
     }
 
     public static Mono<Void> deletion(MessageDeleteEvent event) {
@@ -82,40 +73,37 @@ public class MessageHandler {
         return executeMessage(message, msgContent);
     }
 
-    @NotNull
-    private static Mono<Object> executeMessage(Message message, String msgContent) {
-        Channel channel = message.getChannel().block();
+    private void executeMessage(Message message, String msgContent) {
+        Channel channel = message.getChannel();
 
         if (channel instanceof PrivateChannel dm) {
-            currentMessageURL = String.format("[dms with %s](https://discord.com/channels/@me/%s/%s)", dm.getRecipients()
-                    .stream()
-                    .map(User::getMention)
-                    .collect(Collectors.joining(", ")), dm.getId().asString(), message.getId().asString());
+            User owner = dm.getUser();
+            if (owner != null) {
+                currentMessageURL = String.format("[dms with %s](https://discord.com/channels/@me/%s/%s)", owner.getAsMention(), dm.getId(), message.getId());
+            }
         } else if (channel instanceof GuildChannel gc) {
-            currentMessageURL = String.format("[#%s](https://discord.com/channels/%s/%s/%s)", gc.getName(), gc.getGuildId().asString(), gc.getId().asString(), message.getId().asString());
+            currentMessageURL = String.format("[#%s](https://discord.com/channels/%s/%s/%s)", gc.getName(), gc.getGuild().getId(), gc.getId(), message.getId());
         } else {
             currentMessageURL = null;
         }
 
-        Mono<Object> amongVal = Mono.empty();
-
         // If the first char is the prefix
-        if (msgContent.length() > 0 && msgContent.charAt(0) == FloppaTomlConfig.prefix.charAt(0) && !message.getAuthor().get().isBot() && !message.mentionsEveryone()) {
+        if (msgContent.length() > 0 && msgContent.charAt(0) == FloppaTomlConfig.prefix.charAt(0) && !message.getAuthor().isBot() && !message.getMentions().mentionsEveryone()) {
             try {
                 // get the command
                 String commandCall = msgContent.toLowerCase().split(" ")[0].replace(FloppaTomlConfig.prefix, " ").strip();
                 ICommand command = commands.get(commandCall);
 
-                // we do a little bit of executing
+                // we do a minor amount of executing
                 sendMessage(message, command);
             } catch (IndexOutOfBoundsException ignored) {}
-        } else if (CommandUtil.ghIssuePattern.matcher(msgContent).matches() && !message.getAuthor().get().isBot()) {
+        } else if (/*CommandUtil.ghIssuePattern.matcher(msgContent).matches() TODO &&*/ !message.getAuthor().isBot()) {
             sendMessage(message, commands.get("gh"));
         } else {
             for (String key : searchCommands.keySet()) {
                 String prefix = key.split(" ")[0];
                 String terminator = key.split(" ")[1];
-                if (msgContent.contains(prefix) && msgContent.contains(terminator) && msgContent.indexOf(prefix) < msgContent.indexOf(terminator) && !message.getAuthor().get().isBot() && !message.mentionsEveryone()) {
+                if (msgContent.contains(prefix) && msgContent.contains(terminator) && msgContent.indexOf(prefix) < msgContent.indexOf(terminator) && !message.getAuthor().isBot() && !message.getMentions().mentionsEveryone()) {
                     ICommand command = searchCommands.get(key);
                     sendMessage(message, command);
                 }
@@ -124,16 +112,10 @@ public class MessageHandler {
 
         // flop
         if (String.join("", msgContent.toLowerCase().split(" ")).contains(FloppaTomlConfig.emotePhrase)) {
-            EmojiData emojiData = CoffeeFloppa.client.getGuildEmojiById(
-                    Snowflake.of(FloppaTomlConfig.emoteGuild),
-                    Snowflake.of(FloppaTomlConfig.emoteID)).getData().block();
-            if (emojiData != null) {
-                message.addReaction(ReactionEmoji.of(emojiData)).subscribe();
-                CoffeeFloppa.increaseFlopCount();
-            }
+            message.addReaction(Emoji.fromCustom(FloppaTomlConfig.emoteName, FloppaTomlConfig.emoteID, FloppaTomlConfig.emoteAnimated)).queue();
+            CoffeeFloppa.increaseFlopCount();
         }
         currentMessageURL = null;
-        return amongVal;
     }
 
     public static boolean sendMessage(Message ref, final String msg, boolean withReference) {

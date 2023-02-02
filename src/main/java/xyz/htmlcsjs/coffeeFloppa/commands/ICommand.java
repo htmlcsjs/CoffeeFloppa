@@ -1,18 +1,9 @@
 package xyz.htmlcsjs.coffeeFloppa.commands;
 
-import discord4j.core.object.entity.Message;
-import org.jetbrains.annotations.NotNull;
+import net.dv8tion.jda.api.entities.Message;
 import org.jetbrains.annotations.Nullable;
 
 public interface ICommand {
-
-    /**
-     * @return The name/handle of the command
-     */
-    @NotNull
-    String getName();
-
-
     /**
      * To be executed when the command is called
      * @param message The Message to respond to
@@ -27,6 +18,6 @@ public interface ICommand {
      */
     default String helpInfo() {
         Class<? extends ICommand> clazz = this.getClass();
-        return clazz.getSimpleName();
+        return clazz.getSimpleName() + " is definitely a command";
     }
 }

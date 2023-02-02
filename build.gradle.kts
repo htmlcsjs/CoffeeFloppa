@@ -5,7 +5,9 @@ plugins {
     application
     id("com.github.johnrengelman.shadow") version "7.1.2"
     id("org.ajoberstar.grgit") version "5.0.0"
+    idea
 }
+
 
 group = "xyz.htmlcsjs"
 version = "0.4.1"
@@ -26,9 +28,15 @@ application {
     mainClass.set("xyz.htmlcsjs.coffeeFloppa.asm.FloppaLauncher")
     tasks.run.get().workingDir = File("run/")
 }
+idea {
+    module {
+        isDownloadJavadoc = true
+        isDownloadJavadoc = true
+    }
+}
 
 dependencies {
-    implementation("com.discord4j:discord4j-core:3.2.3")
+    implementation("net.dv8tion:JDA:5.0.0-beta.3")
     implementation("ch.qos.logback:logback-classic:1.4.4")
     implementation("com.googlecode.json-simple:json-simple:1.1.1")
     implementation("me.xdrop:fuzzywuzzy:1.4.0")
