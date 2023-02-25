@@ -3,9 +3,11 @@ package xyz.htmlcsjs.coffeeFloppa.commands;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.MessageCreateFields;
 import discord4j.rest.util.AllowedMentions;
-import xyz.htmlcsjs.coffeeFloppa.CoffeeFloppa;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import reactor.core.publisher.Mono;
+import xyz.htmlcsjs.coffeeFloppa.CoffeeFloppa;
+import xyz.htmlcsjs.coffeeFloppa.handlers.MessageHandler;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -41,10 +43,13 @@ public class CustomCommand implements ICommand {
                 formatted.append(++i).append(".").append("\n");
                 formatted.append(response).append("\n");
             }
-            message.getChannel().flatMap(channel -> channel.createMessage(String.format("The responses for %s are:", name))
+
+            Mono<Message> messageMono = message.getChannel().flatMap(channel -> channel.createMessage(String.format("The responses for %s are:", name))
                     .withFiles(MessageCreateFields.File.of("msg.txt", new ByteArrayInputStream(formatted.toString().getBytes(StandardCharsets.UTF_8))))
                     .withMessageReference(message.getId())
-                    .withAllowedMentions(AllowedMentions.suppressEveryone())).subscribe();
+                    .withAllowedMentions(AllowedMentions.suppressEveryone()));
+
+            MessageHandler.sendRegisterMessage(message, messageMono);
             return null;
         } else {
             if (responses.size() > 1) {
