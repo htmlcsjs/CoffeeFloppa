@@ -76,10 +76,10 @@ public class GithubIssueCommand implements ICommand {
                     if (issueJSON.containsKey("user") && issueJSON.get("user") instanceof JSONObject userData) {
                         embedBuilder.author(userData.containsKey("name") ? (String) userData.get("name") : (String) userData.get("login"), (String) userData.get("html_url"), (String) userData.get("avatar_url"));
                     }
-                    if (issueJSON.containsKey("body")) {
+                    if (issueJSON.containsKey("body") && issueJSON.get("body") instanceof String rawBody) {
                         StringBuilder body = new StringBuilder();
                         int i = 0;
-                        for (String s : ((String) issueJSON.get("body")).split("\n")) {
+                        for (String s : rawBody.split("\n")) {
                             if (i > 10) {
                                 body = new StringBuilder(body.toString().trim() + "...\n");
                                 break;
@@ -88,6 +88,8 @@ public class GithubIssueCommand implements ICommand {
                             i++;
                         }
                         embedBuilder.description(CommandUtil.trimString(body.toString(), 1000, "..."));
+                    } else {
+                        embedBuilder.description("*No description*");
                     }
                     embedBuilder.timestamp(Instant.parse((String) issueJSON.get("updated_at")));
                     embeds.add(embedBuilder.build());
