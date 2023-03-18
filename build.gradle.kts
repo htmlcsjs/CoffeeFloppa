@@ -20,6 +20,12 @@ repositories {
     maven {
         setUrl("https://cursemaven.com")
     }
+    maven {
+        setUrl("https://www.jitpack.io")
+    }
+    maven {
+        setUrl("https://oss.sonatype.org/content/repositories/snapshots")
+    }
 }
 
 application {
@@ -28,8 +34,9 @@ application {
 }
 
 dependencies {
-    implementation("com.discord4j:discord4j-core:3.2.3")
-    implementation("ch.qos.logback:logback-classic:1.4.4")
+    // implementation("com.discord4j:discord4j-core:3.2.3")
+    implementation("com.github.htmlcsjs:Discord4Floppa:34ef8d4")
+    implementation("ch.qos.logback:logback-classic:1.4.6")
     implementation("com.googlecode.json-simple:json-simple:1.1.1")
     implementation("me.xdrop:fuzzywuzzy:1.4.0")
     implementation("org.luaj:luaj-jse:3.0.1")
