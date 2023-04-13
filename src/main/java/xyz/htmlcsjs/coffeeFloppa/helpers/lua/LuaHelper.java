@@ -16,6 +16,7 @@ public class LuaHelper {
     private static final int tabSize = 4;
     private static final List<LuaTable> hitTables = new ArrayList<>();
     private static StringBuilder printBuffer = new StringBuilder();
+    private static boolean printingEnabled = true;
     private static FloppaLuaLib floppaLib;
 
     public static void initLuaServer() {
@@ -41,6 +42,7 @@ public class LuaHelper {
     public static Varargs runScriptInSandbox(String script, Message message) {
 
         printBuffer = new StringBuilder();
+        printingEnabled = true;
         floppaLib = new FloppaLuaLib(message);
 
         Globals user_globals = new Globals();
@@ -131,7 +133,12 @@ public class LuaHelper {
     public static class PrintFunc extends VarArgFunction {
         @Override
         public Varargs invoke(Varargs args) {
-            printBuffer.append(args.tojstring()).append("\n");
+            if (printingEnabled) {
+                printBuffer.append(args.tojstring()).append("\n");
+                if (printBuffer.length() > 200_000) {
+                    printingEnabled = false;
+                }
+            }
             return LuaValue.NIL;
         }
     }

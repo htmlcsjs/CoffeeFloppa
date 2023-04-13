@@ -5,7 +5,7 @@ import org.objectweb.asm.*;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public class FloppaTransformer implements Opcodes{
+public class FloppaTransformer implements Opcodes {
     private static final List<String> IGNORE_METHODS = List.of("getTierByVoltage@(J)B", "<init>@()V");
     public static final String REPLACEMENT_FORMAT = "£";
 
