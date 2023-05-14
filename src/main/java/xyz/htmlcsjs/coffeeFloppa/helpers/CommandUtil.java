@@ -22,7 +22,7 @@ public class CommandUtil {
     // Pattern for recognizing a URL, based off RFC 3986, "taken" from https://stackoverflow.com/questions/5713558/
     public static final Pattern urlPattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/|www\\.)(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)",
             Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL);
-    public static final Pattern ghIssuePattern = Pattern.compile(".*?([a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*/[a-zA-Z0-9_\\-]+)#(\\d+).*?", Pattern.MULTILINE);
+    public static final Pattern ghIssuePattern = Pattern.compile(".*?([a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*\\/[a-zA-Z0-9_\\-\\.]+)#(\\d+).*?", Pattern.MULTILINE);
 
     public static boolean getAllowedToRun(Message message) {
         Set<Snowflake> userRoleIDs;
