@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "xyz.htmlcsjs"
-version = "1.0.0"
+version = "1.0.1"
 var projectBaseName = "CoffeeFloppa"
 var mainClass = "xyz.htmlcsjs.coffeeFloppa.asm.FloppaLauncher"
 
@@ -34,8 +34,8 @@ application {
 }
 
 dependencies {
-    // implementation("com.discord4j:discord4j-core:3.2.3")
-    implementation("com.github.htmlcsjs:Discord4Floppa:34ef8d4")
+    // implementation("com.discord4j:discord4j-core:3.2.4")
+    implementation("com.github.htmlcsjs:Discord4Floppa:c9e32fe")
     implementation("ch.qos.logback:logback-classic:1.4.6")
     implementation("com.googlecode.json-simple:json-simple:1.1.1")
     implementation("me.xdrop:fuzzywuzzy:1.4.0")

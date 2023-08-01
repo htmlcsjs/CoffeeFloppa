@@ -23,6 +23,7 @@ public class CommandUtil {
     public static final Pattern urlPattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/|www\\.)(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)",
             Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL);
     public static final Pattern ghIssuePattern = Pattern.compile(".*?([a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*\\/[a-zA-Z0-9_\\-\\.]+)#(\\d+).*?", Pattern.MULTILINE);
+    public static final Pattern ghIssueSmallPattern = Pattern.compile(".*?([\\w.]+)?#(\\d+).*?", Pattern.MULTILINE);
 
     public static boolean getAllowedToRun(Message message) {
         Set<Snowflake> userRoleIDs;

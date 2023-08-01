@@ -100,7 +100,7 @@ public class MessageHandler {
         Mono<Object> amongVal = Mono.empty();
 
         // If the first char is the prefix
-        if (msgContent.length() > 0 && msgContent.charAt(0) == FloppaTomlConfig.prefix.charAt(0) && !message.getAuthor().get().isBot() && !message.mentionsEveryone()) {
+        if (!msgContent.isEmpty() && msgContent.charAt(0) == FloppaTomlConfig.prefix.charAt(0) && !message.getAuthor().get().isBot() && !message.mentionsEveryone()) {
             try {
                 // get the command
                 String commandCall = msgContent.toLowerCase().split(" ")[0].replace(FloppaTomlConfig.prefix, " ").strip();
@@ -109,7 +109,7 @@ public class MessageHandler {
                 // we do a little bit of executing
                 sendMessage(message, command);
             } catch (IndexOutOfBoundsException ignored) {}
-        } else if (CommandUtil.ghIssuePattern.matcher(msgContent).matches() && !message.getAuthor().get().isBot()) {
+        } else if ((CommandUtil.ghIssuePattern.matcher(msgContent).matches() || CommandUtil.ghIssueSmallPattern.matcher(msgContent).matches())&& !message.getAuthor().get().isBot()) {
             sendMessage(message, commands.get("gh"));
         } else {
             for (String key : searchCommands.keySet()) {
