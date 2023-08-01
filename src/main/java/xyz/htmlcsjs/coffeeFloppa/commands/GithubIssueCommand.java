@@ -149,7 +149,7 @@ public class GithubIssueCommand implements ICommand {
                     embedBuilder.timestamp(Instant.parse((String) issueJSON.get("updated_at")));
                     embeds.add(embedBuilder.build());
                 } else {
-                    msgBody.append("[#%s: %s](<https://github.com/%s/issues/%s>\n".formatted(id, issueJSON.get("title"), repo, id));
+                    msgBody.append("[#%s: %s](<https://github.com/%s/issues/%s>)\n".formatted(id, issueJSON.get("title"), repo, id));
                 }
             } catch (IOException | InterruptedException | ParseException e) {
                 CoffeeFloppa.handleException(e);
