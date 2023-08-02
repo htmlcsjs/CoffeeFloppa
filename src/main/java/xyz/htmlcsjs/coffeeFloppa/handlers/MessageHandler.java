@@ -109,7 +109,7 @@ public class MessageHandler {
                 // we do a little bit of executing
                 sendMessage(message, command);
             } catch (IndexOutOfBoundsException ignored) {}
-        } else if ((CommandUtil.ghIssuePattern.matcher(msgContent).matches() || CommandUtil.ghIssueSmallPattern.matcher(msgContent).matches())&& !message.getAuthor().get().isBot()) {
+        } else if ((CommandUtil.ghIssuePattern.matcher(msgContent).find() || CommandUtil.ghIssueSmallPattern.matcher(msgContent).find())&& !message.getAuthor().get().isBot()) {
             sendMessage(message, commands.get("gh"));
         } else {
             for (String key : searchCommands.keySet()) {
