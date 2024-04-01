@@ -24,6 +24,8 @@ import xyz.htmlcsjs.coffeeFloppa.toml.FloppaTomlConfig;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -84,6 +86,9 @@ public class MessageHandler {
 
     @NotNull
     private static Mono<Object> executeMessage(Message message, String msgContent) {
+        if (Duration.between(message.getTimestamp(), Instant.now()).toHours() >= 2) {
+            return Mono.empty();
+        }
         Channel channel = message.getChannel().block();
 
         if (channel instanceof PrivateChannel dm) {
