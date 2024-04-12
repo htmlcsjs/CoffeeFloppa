@@ -115,7 +115,7 @@ public class FloppaLuaLib extends TwoArgFunction {
     @Nullable
     private GuildChannel getChannelSafe(LuaValue channelID) {
         GuildChannel channel = guild.getChannelById(Snowflake.of(channelID.isnil() ? message.getChannelId().asString() : channelID.checkjstring())).block();
-        if (channel instanceof TopLevelGuildChannel && message.getAuthor().isPresent()) {
+        if (channel != null && message.getAuthor().isPresent()) {
             PermissionSet permissions = channel.getEffectivePermissions(message.getAuthor().get().getId()).block();
             if (permissions != null && permissions.containsAll(Arrays.asList(Permission.VIEW_CHANNEL, Permission.READ_MESSAGE_HISTORY))) {
                 return channel;
