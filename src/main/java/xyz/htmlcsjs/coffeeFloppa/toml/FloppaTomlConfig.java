@@ -42,6 +42,13 @@ public class FloppaTomlConfig {
 
     @TomlConfig.ConfigElement(location = "repo_aliases")
     public static String repoAliases = "";
+
     @TomlConfig.ConfigElement(location = "channel_aliases")
     public static String channelAliases = "";
+
+    @TomlConfig.ConfigElement(location = "auto_tag_id")
+    public static long autoTagId = 0;
+
+    @TomlConfig.ConfigElement(location = "auto_tag_channel")
+    public static long autoTagChannel = 0;
 }

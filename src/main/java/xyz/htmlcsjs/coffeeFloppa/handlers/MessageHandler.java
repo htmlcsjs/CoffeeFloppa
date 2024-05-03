@@ -1,19 +1,19 @@
 package xyz.htmlcsjs.coffeeFloppa.handlers;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.MessageDeleteEvent;
 import discord4j.core.event.domain.message.MessageUpdateEvent;
+import discord4j.core.event.domain.thread.ThreadChannelCreateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
-import discord4j.core.object.entity.channel.Channel;
-import discord4j.core.object.entity.channel.GuildChannel;
-import discord4j.core.object.entity.channel.MessageChannel;
-import discord4j.core.object.entity.channel.PrivateChannel;
+import discord4j.core.object.entity.channel.*;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.MessageCreateFields;
 import discord4j.core.spec.MessageCreateMono;
 import discord4j.discordjson.json.EmojiData;
+import discord4j.rest.route.Routes;
 import discord4j.rest.util.AllowedMentions;
 import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
@@ -141,6 +141,21 @@ public class MessageHandler {
         return amongVal;
     }
 
+    public static Mono<Object> threadCreate(ThreadChannelCreateEvent event) {
+        ThreadChannel thread = event.getChannel();
+        Snowflake parentId = thread.getParentId().orElse(null);
+        if (parentId != null && parentId.equals(Snowflake.of(FloppaTomlConfig.autoTagChannel))) {
+            // i love APIs
+            CoffeeFloppa.client.getChannelService();
+            return Routes.CHANNEL_MODIFY_PARTIAL.newRequest(thread.getId().asLong())
+                    .body(new AddTagEditRequest(FloppaTomlConfig.autoTagId))
+                    .optionalHeader("X-Audit-Log-Reason", "Floppa Automated")
+                    .exchange(CoffeeFloppa.client.getRestResources().getRouter())
+                    .bodyToMono(Object.class);
+        }
+        return Mono.empty();
+    }
+
     public static boolean sendMessage(Message ref, final String msg, boolean withReference) {
         try {
             Mono<Message> messageMono = Mono.empty();
@@ -256,5 +271,14 @@ public class MessageHandler {
 
     public static String getCurrentMessageURL() {
         return currentMessageURL;
+    }
+
+    private static class AddTagEditRequest {
+        @JsonProperty("applied_tags")
+        private final List<Long> appliedTags;
+
+        protected AddTagEditRequest(Long... tags) {
+            this.appliedTags = List.of(tags);
+        }
     }
 }

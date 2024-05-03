@@ -6,6 +6,7 @@ import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.*;
+import discord4j.core.event.domain.thread.ThreadChannelCreateEvent;
 import discord4j.core.object.entity.User;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.ApplicationCommandRequest;
@@ -81,6 +82,9 @@ public class CoffeeFloppa {
             Mono<Void> handleReactionAddition = gateway.on(ReactionAddEvent.class, ReactionHandler::addition).then();
             Mono<Void> handleReactionDeletion = gateway.on(ReactionRemoveEvent.class, ReactionHandler::deletion).then();
 
+            // thread handling
+            Mono<Void> handleThreadCreation = gateway.on(ThreadChannelCreateEvent.class, MessageHandler::threadCreate).then();
+
             // fuck slash commands
             Long appid = client.getApplicationId().block();
             if (appid != null) {
@@ -108,6 +112,7 @@ public class CoffeeFloppa {
                     .and(handleReactionDeletion)
                     .and(handleCommandEditing)
                     .and(handleCommandDeletion)
+                    .and(handleThreadCreation)
                     .and(handleShittyCommands)
                     .doOnError(CoffeeFloppa::handleException);
         });
