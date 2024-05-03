@@ -12,6 +12,7 @@ import discord4j.core.object.entity.channel.*;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.MessageCreateFields;
 import discord4j.core.spec.MessageCreateMono;
+import discord4j.discordjson.Id;
 import discord4j.discordjson.json.EmojiData;
 import discord4j.rest.route.Routes;
 import discord4j.rest.util.AllowedMentions;
@@ -146,9 +147,13 @@ public class MessageHandler {
         Snowflake parentId = thread.getParentId().orElse(null);
         if (parentId != null && parentId.equals(Snowflake.of(FloppaTomlConfig.autoTagChannel))) {
             // i love APIs
-            CoffeeFloppa.client.getChannelService();
+            List<Id> tags = new ArrayList<>();
+            if (!thread.getData().appliedTags().isAbsent()) {
+                tags.addAll(thread.getData().appliedTags().get());
+            }
+            tags.add(Id.of(FloppaTomlConfig.autoTagId));
             return Routes.CHANNEL_MODIFY_PARTIAL.newRequest(thread.getId().asLong())
-                    .body(new AddTagEditRequest(FloppaTomlConfig.autoTagId))
+                    .body(new AddTagEditRequest(tags))
                     .optionalHeader("X-Audit-Log-Reason", "Floppa Automated")
                     .exchange(CoffeeFloppa.client.getRestResources().getRouter())
                     .bodyToMono(Object.class);
@@ -275,10 +280,10 @@ public class MessageHandler {
 
     private static class AddTagEditRequest {
         @JsonProperty("applied_tags")
-        private final List<Long> appliedTags;
+        private final List<Id> appliedTags;
 
-        protected AddTagEditRequest(Long... tags) {
-            this.appliedTags = List.of(tags);
+        protected AddTagEditRequest(List<Id> tags) {
+            this.appliedTags = tags;
         }
     }
 }
