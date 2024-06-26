@@ -44,7 +44,7 @@ public class GithubIssueCommand implements ICommand {
             } else {
                 repo = split.get(0);
             }
-            aliasMap.put(alias, repo);
+            aliasMap.put(alias.toLowerCase(), repo);
         }
         categoryAliasMap.clear();
         for (String str : FloppaTomlConfig.channelAliases.split(";")) {
@@ -56,7 +56,7 @@ public class GithubIssueCommand implements ICommand {
             } else {
                 repo = split.get(0);
             }
-            categoryAliasMap.put(alias, repo);
+            categoryAliasMap.put(alias, repo.toLowerCase());
         }
     }
 
@@ -86,8 +86,8 @@ public class GithubIssueCommand implements ICommand {
                                 issueList.add(new IssueListItem(aliasMap.get(categoryAliasMap.get(parentId.get().asString())), matchResult.group(2)));
                             }
                         }
-                    } else if (aliasMap.containsKey(matchResult.group(1))){
-                        issueList.add(new IssueListItem(aliasMap.get(matchResult.group(1)), matchResult.group(2)));
+                    } else if (aliasMap.containsKey(matchResult.group(1).toLowerCase())){
+                        issueList.add(new IssueListItem(aliasMap.get(matchResult.group(1).toLowerCase()), matchResult.group(2)));
                     }
                 });
 
