@@ -34,9 +34,9 @@ application {
 }
 
 dependencies {
-    // implementation("com.discord4j:discord4j-core:3.2.4")
-    implementation("com.github.htmlcsjs:Discord4Floppa:c9e32fe")
-    implementation("ch.qos.logback:logback-classic:1.4.6")
+    implementation("com.discord4j:discord4j-core:3.3.0-RC1")
+    //implementation("com.github.htmlcsjs:Discord4Floppa:c9e32fe")
+    implementation("ch.qos.logback:logback-classic:1.4.12")
     implementation("com.googlecode.json-simple:json-simple:1.1.1")
     implementation("me.xdrop:fuzzywuzzy:1.4.0")
     implementation("org.luaj:luaj-jse:3.0.1")

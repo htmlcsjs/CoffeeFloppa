@@ -30,8 +30,7 @@ public class GithubIssueCommand implements ICommand {
 
     private static final String apiRoot = "https://api.github.com/";
     private static final Map<String, String> aliasMap = new HashMap<>();
-    private static final Map<String, String> categoryAliasMap = new HashMap<>();
-
+    private static final Map<String, String> channelAliasMap = new HashMap<>();
 
     public GithubIssueCommand() {
         aliasMap.clear();
@@ -46,7 +45,7 @@ public class GithubIssueCommand implements ICommand {
             }
             aliasMap.put(alias.toLowerCase(), repo);
         }
-        categoryAliasMap.clear();
+        channelAliasMap.clear();
         for (String str : FloppaTomlConfig.channelAliases.split(";")) {
             List<String> split = new ArrayList<>(List.of(str.split(":")));
             String alias = split.remove(0);
@@ -56,13 +55,13 @@ public class GithubIssueCommand implements ICommand {
             } else {
                 repo = split.get(0);
             }
-            categoryAliasMap.put(alias, repo.toLowerCase());
+            channelAliasMap.put(alias, repo.toLowerCase());
         }
     }
 
     @Override
     public @NotNull String getName() {
-        return "gh";
+        return "ghissue";
     }
 
     @Nullable
@@ -78,12 +77,12 @@ public class GithubIssueCommand implements ICommand {
                 .forEach(matchResult -> {
                     if (matchResult.group(1) == null) {
                         MessageChannel channel = message.getChannel().block();
-                        if (channel != null && categoryAliasMap.containsKey(channel.getId().asString())) {
-                            issueList.add(new IssueListItem(aliasMap.get(categoryAliasMap.get(channel.getId().asString())), matchResult.group(2)));
+                        if (channel != null && channelAliasMap.containsKey(channel.getId().asString())) {
+                            issueList.add(new IssueListItem(aliasMap.get(channelAliasMap.get(channel.getId().asString())), matchResult.group(2)));
                         } else if (channel instanceof ThreadChannel thread) {
                             Optional<Snowflake> parentId = thread.getParentId();
-                            if (parentId.isPresent() && categoryAliasMap.containsKey(parentId.get().asString())) {
-                                issueList.add(new IssueListItem(aliasMap.get(categoryAliasMap.get(parentId.get().asString())), matchResult.group(2)));
+                            if (parentId.isPresent() && channelAliasMap.containsKey(parentId.get().asString())) {
+                                issueList.add(new IssueListItem(aliasMap.get(channelAliasMap.get(parentId.get().asString())), matchResult.group(2)));
                             }
                         }
                     } else if (aliasMap.containsKey(matchResult.group(1).toLowerCase())){
@@ -173,7 +172,14 @@ public class GithubIssueCommand implements ICommand {
     public String helpInfo() {
         return "Provides links to issues for github repos";
     }
-    private record IssueListItem(String repo, String id) {
 
+    public static Map<String, String> getAliasMap() {
+        return Collections.unmodifiableMap(aliasMap);
     }
+
+    public static Map<String, String> getChannelAliasMap() {
+        return Collections.unmodifiableMap(channelAliasMap);
+    }
+
+    private record IssueListItem(String repo, String id) { }
 }

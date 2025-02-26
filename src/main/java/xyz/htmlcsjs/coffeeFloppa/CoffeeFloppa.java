@@ -161,6 +161,7 @@ public class CoffeeFloppa {
         MessageHandler.addCommand(new SearchMatCommand());
         MessageHandler.addCommand(new SearchMatByIdCommand());
         MessageHandler.addCommand(new GithubIssueCommand());
+        MessageHandler.addCommand(new GithubLinkCommand());
         MessageHandler.addCommand(new AddonCommand());
         MessageHandler.addCommand(new QuestAdminCommand());
         MessageHandler.addCommand(new RefreshCommand());

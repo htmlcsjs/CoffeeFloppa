@@ -116,7 +116,7 @@ public class MessageHandler {
                 sendMessage(message, command);
             } catch (IndexOutOfBoundsException ignored) {}
         } else if ((CommandUtil.ghIssuePattern.matcher(msgContent).find() || CommandUtil.ghIssueSmallPattern.matcher(msgContent).find())&& !message.getAuthor().get().isBot()) {
-            sendMessage(message, commands.get("gh"));
+            sendMessage(message, commands.get("ghissue"));
         } else {
             for (String key : searchCommands.keySet()) {
                 String prefix = key.split(" ")[0];
